@@ -3,55 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>War Engine v31.12 - Audio Master Control</title>
+    <title>War Engine v32.0 - Responsive Fullscreen</title>
     <style>
         :root { --bg: #050508; --panel: #0d0d12; --accent: #00e5ff; --danger: #ff0055; --sq-l: #1e1e24; --sq-d: #0a0a0f; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        body, html { height: 100%; width: 100%; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; position: fixed; }
+        
+        body, html { 
+            height: 100%; width: 100%; background: var(--bg); 
+            font-family: 'Segoe UI', Roboto, sans-serif; color: white; 
+            overflow: hidden; position: fixed; 
+        }
 
-        main { width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; gap: 10px; }
-        @media (min-width: 1000px) { main { flex-direction: row; justify-content: space-evenly; } }
+        /* CONTAINER PRINCIPAL RESPONSIVO */
+        .app-container {
+            display: grid;
+            width: 100vw;
+            height: 100vh;
+            grid-template-areas: "game" "dash";
+            grid-template-rows: 1fr auto;
+        }
 
-        /* TABULEIRO */
-        .board-wrapper { position: relative; padding: 35px; background: #111; border-radius: 12px; border: 1px solid #333; }
-        #board { display: grid; grid-template-columns: repeat(8, 1fr); width: 78vmin; height: 78vmin; max-width: 500px; max-height: 500px; border: 2px solid #444; position: relative; }
-        .coord-h { position: absolute; width: calc(100% - 70px); left: 35px; display: flex; justify-content: space-around; font-size: 14px; color: #888; font-weight: bold; }
-        .coord-v { position: absolute; height: calc(100% - 70px); top: 35px; display: flex; flex-direction: column; justify-content: space-around; font-size: 14px; color: #888; font-weight: bold; }
-        .top { top: 10px; } .bottom { bottom: 10px; } .left { left: 12px; } .right { right: 12px; }
+        @media (min-width: 1000px) {
+            .app-container {
+                grid-template-areas: "game dash";
+                grid-template-columns: 1fr 320px;
+                grid-template-rows: 100vh;
+            }
+        }
 
+        /* ÁREA DO JOGO (CENTRALIZADA) */
+        main {
+            grid-area: game;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            position: relative;
+        }
+
+        .board-wrapper {
+            position: relative;
+            padding: min(4vw, 30px);
+            background: #111;
+            border-radius: 8px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            width: min(85vw, 85vh - 100px);
+            height: min(85vw, 85vh - 100px);
+            max-width: 600px;
+            max-height: 600px;
+            border: 2px solid #444;
+        }
+
+        /* COORDENADAS ADAPTATIVAS */
+        .coord-h, .coord-v {
+            position: absolute; display: flex; font-size: min(3vw, 14px); 
+            color: #666; font-weight: bold; pointer-events: none;
+        }
+        .coord-h { width: calc(100% - min(8vw, 60px)); left: min(4vw, 30px); justify-content: space-around; }
+        .coord-v { height: calc(100% - min(8vw, 60px)); top: min(4vw, 30px); flex-direction: column; justify-content: space-around; }
+        .top { top: 5px; } .bottom { bottom: 5px; } .left { left: 8px; } .right { right: 8px; }
+
+        /* PEÇAS E QUADRADOS */
         .sq { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .l { background: var(--sq-l); } .d { background: var(--sq-d); }
         .piece-container { width: 90%; height: 90%; position: relative; }
         .piece { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 2; }
-        .btn-remove { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; background: var(--danger); border-radius: 50%; color: white; display: flex; justify-content: center; align-items: center; font-size: 14px; border: 2px solid #fff; z-index: 10; }
+        .btn-remove { 
+            position: absolute; top: -5px; right: -5px; width: 18px; height: 18px; 
+            background: var(--danger); border-radius: 50%; color: white; 
+            display: flex; justify-content: center; align-items: center; font-size: 12px; z-index: 10;
+        }
 
-        /* DASHBOARD */
-        #dashboard { width: 300px; display: flex; flex-direction: column; gap: 15px; background: var(--panel); padding: 20px; border-radius: 20px; border: 1px solid #222; }
-        .player-card { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 12px; background: #000; border: 2px solid transparent; transition: 0.4s; }
-        .active-B { border-color: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
-        .active-P { border-color: var(--danger); box-shadow: 0 0 20px rgba(255,0,85,0.2); }
-        .p-img { width: 70px; height: 70px; border-radius: 10px; border: 2px solid #333; background-size: cover; background-position: center; cursor: pointer; }
-        .p-score { font-size: 28px; font-weight: 900; color: var(--accent); }
+        /* DASHBOARD (DIREITA NO PC / BAIXO NO MOBILE) */
+        #dashboard {
+            grid-area: dash;
+            background: var(--panel);
+            padding: 15px;
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            border-top: 1px solid #222;
+            z-index: 100;
+        }
 
-        /* MENU */
-        aside { position: fixed; top: 0; left: -320px; width: 310px; height: 100%; background: var(--panel); border-right: 2px solid var(--accent); transition: 0.3s; z-index: 8000; display: flex; flex-direction: column; }
+        @media (min-width: 1000px) {
+            #dashboard {
+                flex-direction: column;
+                border-top: none;
+                border-left: 1px solid #222;
+                justify-content: center;
+            }
+        }
+
+        .player-card {
+            flex: 1; display: flex; align-items: center; gap: 10px; 
+            padding: 10px; border-radius: 10px; background: #000; border: 2px solid transparent;
+        }
+        .active-B { border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.1); }
+        .active-P { border-color: var(--danger); box-shadow: 0 0 15px rgba(255,0,85,0.1); }
+        .p-img { width: 45px; height: 45px; border-radius: 8px; background-size: cover; background-position: center; background-color: #111; cursor: pointer; }
+        .p-score { font-size: 20px; font-weight: 900; color: var(--accent); margin-left: auto; }
+
+        /* ARENA DE BATALHA */
+        .overlay { 
+            display: none; position: fixed; inset: 0; z-index: 9000; 
+            background: rgba(0,0,0,0.95); backdrop-filter: blur(10px);
+            align-items: center; justify-content: center;
+        }
+        .arena-content {
+            display: flex; flex-direction: column; align-items: center; gap: 20px;
+            width: 90%; max-width: 500px;
+        }
+        .arena-fighters { display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 10px; }
+        .fighter { flex: 1; text-align: center; }
+        .arena-box { 
+            width: 100%; aspect-ratio: 3/4; max-height: 200px; 
+            background: #111; border: 2px solid #333; border-radius: 8px;
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+        }
+
+        /* MENU E COMPONENTES */
+        aside { 
+            position: fixed; top: 0; left: -320px; width: 300px; height: 100%; 
+            background: var(--panel); border-right: 2px solid var(--accent); 
+            transition: 0.3s; z-index: 8000; display: flex; flex-direction: column; 
+        }
         aside.open { left: 0; }
-        #menu-toggle { position: fixed; top: 15px; left: 15px; z-index: 8500; width: 50px; height: 50px; background: var(--accent); border-radius: 15px; display: flex; justify-content: center; align-items: center; color: #000; cursor: pointer; font-size: 24px; }
+        #menu-toggle { 
+            position: fixed; top: 15px; left: 15px; z-index: 8500; 
+            width: 45px; height: 45px; background: var(--accent); border-radius: 10px; 
+            display: flex; justify-content: center; align-items: center; color: #000; cursor: pointer;
+        }
         .tabs { display: flex; background: #000; }
-        .tabs button { flex: 1; padding: 12px; border: none; background: none; color: #666; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .tabs button { flex: 1; padding: 12px; background: none; border: none; color: #555; font-size: 10px; font-weight: bold; cursor: pointer; }
         .tabs button.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
         .scroll-area { flex: 1; overflow-y: auto; padding: 15px; }
-
-        .btn { width: 100%; padding: 12px; border-radius: 10px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; margin-bottom: 8px; }
+        .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; margin-bottom: 8px; }
         .btn-yes { background: var(--accent); color: #000; }
-        .unit-card { background: #1a1a24; padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #333; }
+        .unit-card { background: #1a1a24; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #333; font-size: 11px; }
         
-        /* ARENA */
-        .overlay { display: none; position: fixed; inset: 0; z-index: 9000; align-items: center; justify-content: center; backdrop-filter: blur(15px); background: rgba(0,0,0,0.9); }
-        .arena-box { width: 160px; height: 220px; background: #111; border: 3px solid #333; background-size: contain; background-repeat: no-repeat; background-position: center; border-radius: 10px; }
-        .audio-controls { display: flex; gap: 5px; margin-top: 10px; width: 100%; }
-        .btn-audio { flex: 1; padding: 8px; font-size: 10px; background: #222; color: #fff; border: 1px solid #444; border-radius: 5px; cursor: pointer; }
-        .btn-audio:active { background: #444; }
+        input[type="range"] { width: 100%; accent-color: var(--accent); }
     </style>
 </head>
 <body>
@@ -60,8 +156,10 @@
 
 <aside id="sidebar">
     <div style="padding: 20px; border-bottom: 1px solid #333;">
-        <h2 style="color:var(--accent); font-size: 16px;">WAR ENGINE PRO</h2>
-        <label style="font-size: 12px; display: block; margin-top: 10px; cursor:pointer"><input type="checkbox" id="edit-mode" onchange="renderBoard()"> MODO EDIÇÃO</label>
+        <h2 style="color:var(--accent); font-size: 16px;">WAR ENGINE 32.0</h2>
+        <label style="font-size: 12px; margin-top: 10px; display: block; cursor:pointer">
+            <input type="checkbox" id="edit-mode" onchange="renderBoard()"> MODO EDIÇÃO
+        </label>
     </div>
     <div class="tabs">
         <button id="t-white" class="active" onclick="showTab('white')">BRANCAS</button>
@@ -71,62 +169,67 @@
     <div class="scroll-area" id="list-white"></div>
     <div class="scroll-area" id="list-black" style="display:none"></div>
     <div class="scroll-area" id="list-sys" style="display:none">
-        <div class="unit-card"><b>MASTER VOLUME</b><input type="range" id="v-master" min="0" max="1" step="0.1" value="1" style="width:100%"></div>
+        <div class="unit-card"><b>MASTER VOLUME</b><input type="range" id="v-master" min="0" max="1" step="0.1" value="1" oninput="save()"></div>
         <button class="btn" onclick="rollInitiative()" style="background:#222; color:var(--accent)">🎲 SORTEAR INÍCIO</button>
     </div>
-    <div style="padding: 20px; background: #000;"><button class="btn btn-yes" onclick="startBattle()">ATIVAR BATALHA</button></div>
+    <div style="padding: 15px; background: #000;"><button class="btn btn-yes" onclick="startBattle()">ATIVAR BATALHA</button></div>
 </aside>
 
-<main>
-    <div class="board-wrapper">
-        <div class="coord-h top"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
-        <div class="coord-h bottom"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
-        <div class="coord-v left"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
-        <div class="coord-v right"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
-        <div id="board"></div>
-    </div>
+<div class="app-container">
+    <main>
+        <div class="board-wrapper">
+            <div class="coord-h top"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+            <div class="coord-h bottom"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+            <div class="coord-v left"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+            <div class="coord-v right"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+            <div id="board"></div>
+        </div>
+    </main>
+
     <div id="dashboard">
         <div id="card-B" class="player-card">
             <div id="img-B" class="p-img" onclick="document.getElementById('f-av-B').click()"></div>
-            <div style="flex:1"><div style="font-size:10px; color:#888;">BRANCO</div><div id="score-B" class="p-score">0</div></div>
+            <div style="font-size: 10px; color: #888; font-weight: bold;">BRANCO</div>
+            <div id="score-B" class="p-score">0</div>
             <input type="file" id="f-av-B" style="display:none" onchange="upAvatar('B', this)">
         </div>
         <div id="card-P" class="player-card">
             <div id="img-P" class="p-img" onclick="document.getElementById('f-av-P').click()"></div>
-            <div style="flex:1"><div style="font-size:10px; color:#888;">PRETO</div><div id="score-P" class="p-score" style="color:var(--danger)">0</div></div>
+            <div style="font-size: 10px; color: #888; font-weight: bold;">PRETO</div>
+            <div id="score-P" class="p-score" style="color:var(--danger)">0</div>
             <input type="file" id="f-av-P" style="display:none" onchange="upAvatar('P', this)">
         </div>
     </div>
-</main>
+</div>
 
 <div id="arena" class="overlay">
-    <div style="background: #000; padding: 30px; border: 2px solid var(--accent); border-radius: 20px; display: flex; flex-direction: column; align-items: center; gap: 20px;">
-        <div style="display:flex; gap:30px; align-items:center">
-            <div style="text-align:center">
+    <div class="arena-content">
+        <div class="arena-fighters">
+            <div class="fighter">
                 <div id="a-img" class="arena-box" style="border-color: var(--accent)"></div>
-                <div class="audio-controls">
-                    <button class="btn-audio" onclick="audioAction('atk','play')">▶ PLAY</button>
-                    <button class="btn-audio" onclick="audioAction('atk','pause')">⏸ PAUSE</button>
+                <div style="display:flex; gap:5px; margin-top:8px">
+                    <button class="btn" onclick="audioAction('atk','play')" style="background:#004444; font-size:10px; padding:8px">▶</button>
+                    <button class="btn" onclick="audioAction('atk','pause')" style="background:#440000; font-size:10px; padding:8px">||</button>
                 </div>
-                <button class="btn btn-yes" onclick="finishDuel('atk')" style="margin-top:10px">VENCEU</button>
+                <button class="btn btn-yes" onclick="finishDuel('atk')" style="margin-top:8px; font-size:10px">VENCEU</button>
             </div>
-            <h1 style="font-size:40px">⚔️</h1>
-            <div style="text-align:center">
+            <h1 style="font-size: 30px;">VS</h1>
+            <div class="fighter">
                 <div id="d-img" class="arena-box" style="border-color: var(--danger)"></div>
-                <div class="audio-controls">
-                    <button class="btn-audio" onclick="audioAction('def','play')">▶ PLAY</button>
-                    <button class="btn-audio" onclick="audioAction('def','pause')">⏸ PAUSE</button>
+                <div style="display:flex; gap:5px; margin-top:8px">
+                    <button class="btn" onclick="audioAction('def','play')" style="background:#004444; font-size:10px; padding:8px">▶</button>
+                    <button class="btn" onclick="audioAction('def','pause')" style="background:#440000; font-size:10px; padding:8px">||</button>
                 </div>
-                <button class="btn" onclick="finishDuel('def')" style="background:var(--danger); color:#fff; margin-top:10px">VENCEU</button>
+                <button class="btn" onclick="finishDuel('def')" style="background:var(--danger); color:#fff; margin-top:8px; font-size:10px">VENCEU</button>
             </div>
         </div>
-        <button class="btn" onclick="closeArena()" style="background:#222; font-size:11px">CANCELAR</button>
+        <button class="btn" onclick="closeArena()" style="background:#222; width:120px; font-size:10px">CANCELAR</button>
     </div>
 </div>
 
 <script>
     let db, store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''} };
-    const req = indexedDB.open("WarUltimate_v31_12", 1);
+    const req = indexedDB.open("WarEngine_v32", 1);
     req.onupgradeneeded = e => e.target.result.createObjectStore("assets");
     req.onsuccess = e => { db = e.target.result; loadData(); };
 
@@ -175,31 +278,21 @@
             if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
             else if(board[i]) { 
                 pending = {f:sel, t:i}; 
-                setupArenaAudio();
-                document.getElementById('arena').style.display = 'flex'; 
-                updateArena(); 
+                setupArenaAudio(); document.getElementById('arena').style.display = 'flex'; updateArena(); 
             }
             else { board[i]=board[sel]; board[sel]=null; nextTurn(); }
         }
     }
 
     function setupArenaAudio() {
-        const idAtk = board[pending.f];
-        const idDef = board[pending.t];
-        
-        audioAtk.src = store.p[idAtk]?.snd || "";
-        audioDef.src = store.p[idDef]?.snd || "";
-        
-        audioAtk.volume = (store.p[idAtk]?.vol ?? 0.7) * document.getElementById('v-master').value;
-        audioDef.volume = (store.p[idDef]?.vol ?? 0.7) * document.getElementById('v-master').value;
+        const idAtk = board[pending.f], idDef = board[pending.t];
+        audioAtk.src = store.p[idAtk]?.snd || ""; audioDef.src = store.p[idDef]?.snd || "";
+        const mVol = document.getElementById('v-master').value;
+        audioAtk.volume = (store.p[idAtk]?.vol ?? 0.7) * mVol;
+        audioDef.volume = (store.p[idDef]?.vol ?? 0.7) * mVol;
     }
 
-    function audioAction(role, act) {
-        const audio = role === 'atk' ? audioAtk : audioDef;
-        if(act === 'play') audio.play();
-        else audio.pause();
-    }
-
+    function audioAction(role, act) { (role === 'atk' ? audioAtk : audioDef)[act](); }
     function updateArena() {
         document.getElementById('a-img').style.backgroundImage = `url(${store.p[board[pending.f]]?.img || ''})`;
         document.getElementById('d-img').style.backgroundImage = `url(${store.p[board[pending.t]]?.img || ''})`;
