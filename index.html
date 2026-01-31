@@ -3,183 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>War Engine v29.7 - Absolute</title>
+    <title>War Engine v31.12 - Audio Master Control</title>
     <style>
-        :root { --bg: #050508; --panel: #0d0d12; --accent: #00e5ff; --danger: #ff0055; --sq-l: #1e1e24; --sq-d: #0a0a0f; --coord: #555; }
+        :root { --bg: #050508; --panel: #0d0d12; --accent: #00e5ff; --danger: #ff0055; --sq-l: #1e1e24; --sq-d: #0a0a0f; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        body, html { height: 100%; width: 100%; background: var(--bg); font-family: sans-serif; color: white; overflow: hidden; }
+        body, html { height: 100%; width: 100%; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; position: fixed; }
 
-        /* ANIMAÇÕES */
-        @keyframes shake { 0% { transform: translate(1px, 1px); } 20% { transform: translate(-3px, 0px); } 40% { transform: translate(3px, 2px); } 60% { transform: translate(-1px, -1px); } 100% { transform: translate(0px, 0px); } }
-        .shake { animation: shake 0.3s ease-in-out; }
-        @keyframes atk-l { 0% { transform: translateX(0); } 50% { transform: translateX(40px) scale(1.1); } 100% { transform: translateX(0); } }
-        @keyframes atk-r { 0% { transform: translateX(0); } 50% { transform: translateX(-40px) scale(1.1); } 100% { transform: translateX(0); } }
-        .anim-atk { animation: atk-l 0.4s ease-in-out; }
-        .anim-def { animation: atk-r 0.4s ease-in-out; }
-
-        /* UI E MENU */
-        #menu-toggle { position: fixed; top: 15px; left: 15px; z-index: 7000; width: 45px; height: 45px; background: var(--accent); border-radius: 8px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: #000; font-weight: bold; }
-        aside { position: fixed; top: 0; left: -350px; width: 320px; height: 100%; background: var(--panel); border-right: 2px solid var(--accent); transition: 0.4s; z-index: 4000; display: flex; flex-direction: column; }
-        aside.open { left: 0; }
-        .nav-tabs { display: flex; background: #000; }
-        .nav-tabs button { flex: 1; padding: 15px; border: none; background: transparent; color: #555; font-weight: 900; cursor: pointer; font-size: 11px; }
-        .nav-tabs button.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
-        .scroll-area { flex: 1; overflow-y: auto; padding: 15px; }
-        .unit-card { background: #15151c; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #222; }
+        main { width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; gap: 10px; }
+        @media (min-width: 1000px) { main { flex-direction: row; justify-content: space-evenly; } }
 
         /* TABULEIRO */
-        main { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; gap: 30px; }
-        #board-wrapper { position: relative; padding: 25px; background: #000; border-radius: 10px; }
-        #board { display: grid; grid-template-columns: repeat(8, 1fr); width: 80vmin; height: 80vmin; max-width: 550px; border: 2px solid #333; }
-        .sq { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; }
+        .board-wrapper { position: relative; padding: 35px; background: #111; border-radius: 12px; border: 1px solid #333; }
+        #board { display: grid; grid-template-columns: repeat(8, 1fr); width: 78vmin; height: 78vmin; max-width: 500px; max-height: 500px; border: 2px solid #444; position: relative; }
+        .coord-h { position: absolute; width: calc(100% - 70px); left: 35px; display: flex; justify-content: space-around; font-size: 14px; color: #888; font-weight: bold; }
+        .coord-v { position: absolute; height: calc(100% - 70px); top: 35px; display: flex; flex-direction: column; justify-content: space-around; font-size: 14px; color: #888; font-weight: bold; }
+        .top { top: 10px; } .bottom { bottom: 10px; } .left { left: 12px; } .right { right: 12px; }
+
+        .sq { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .l { background: var(--sq-l); } .d { background: var(--sq-d); }
-        
-        .coord-h { position: absolute; bottom: -22px; width: 100%; text-align: center; font-size: 11px; color: var(--coord); font-weight: bold; }
-        .coord-v { position: absolute; left: -22px; height: 100%; display: flex; align-items: center; font-size: 11px; color: var(--coord); font-weight: bold; }
+        .piece-container { width: 90%; height: 90%; position: relative; }
+        .piece { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 2; }
+        .btn-remove { position: absolute; top: -8px; right: -8px; width: 22px; height: 22px; background: var(--danger); border-radius: 50%; color: white; display: flex; justify-content: center; align-items: center; font-size: 14px; border: 2px solid #fff; z-index: 10; }
 
-        .piece-container { width: 88%; height: 88%; position: relative; display: flex; justify-content: center; align-items: center; }
-        .piece { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 2; transition: 0.3s; }
-        
-        .btn-remove { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: var(--danger); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; z-index: 10; border: 2px solid white; cursor: pointer; }
+        /* DASHBOARD */
+        #dashboard { width: 300px; display: flex; flex-direction: column; gap: 15px; background: var(--panel); padding: 20px; border-radius: 20px; border: 1px solid #222; }
+        .player-card { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 12px; background: #000; border: 2px solid transparent; transition: 0.4s; }
+        .active-B { border-color: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        .active-P { border-color: var(--danger); box-shadow: 0 0 20px rgba(255,0,85,0.2); }
+        .p-img { width: 70px; height: 70px; border-radius: 10px; border: 2px solid #333; background-size: cover; background-position: center; cursor: pointer; }
+        .p-score { font-size: 28px; font-weight: 900; color: var(--accent); }
 
-        /* MODAIS */
-        .overlay { display: none; position: fixed; inset: 0; z-index: 6000; align-items: center; justify-content: center; backdrop-filter: blur(15px); background: rgba(0,0,0,0.8); }
-        .modal { background: var(--panel); padding: 30px; border-radius: 20px; border: 1px solid var(--accent); width: 320px; text-align: center; }
-        .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 900; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
+        /* MENU */
+        aside { position: fixed; top: 0; left: -320px; width: 310px; height: 100%; background: var(--panel); border-right: 2px solid var(--accent); transition: 0.3s; z-index: 8000; display: flex; flex-direction: column; }
+        aside.open { left: 0; }
+        #menu-toggle { position: fixed; top: 15px; left: 15px; z-index: 8500; width: 50px; height: 50px; background: var(--accent); border-radius: 15px; display: flex; justify-content: center; align-items: center; color: #000; cursor: pointer; font-size: 24px; }
+        .tabs { display: flex; background: #000; }
+        .tabs button { flex: 1; padding: 12px; border: none; background: none; color: #666; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .tabs button.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+        .scroll-area { flex: 1; overflow-y: auto; padding: 15px; }
+
+        .btn { width: 100%; padding: 12px; border-radius: 10px; border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; margin-bottom: 8px; }
         .btn-yes { background: var(--accent); color: #000; }
-        .btn-atk { background: var(--danger); color: #fff; }
-
-        /* HUD */
-        #command-deck { display: flex; flex-direction: column; gap: 15px; background: rgba(13,13,18,0.9); padding: 20px; border-radius: 20px; border: 1px solid #333; align-items: center; }
-        .avatar-frame { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #444; background-size: cover; background-position: center; background-color: #000; transition: 0.3s; }
-        .turn-active-B { border-color: #fff !important; box-shadow: 0 0 20px #fff; }
-        .turn-active-P { border-color: var(--danger) !important; box-shadow: 0 0 20px var(--danger); }
-        .log-entry { font-size: 10px; padding: 5px; border-bottom: 1px solid #222; color: #aaa; font-family: monospace; }
+        .unit-card { background: #1a1a24; padding: 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #333; }
+        
+        /* ARENA */
+        .overlay { display: none; position: fixed; inset: 0; z-index: 9000; align-items: center; justify-content: center; backdrop-filter: blur(15px); background: rgba(0,0,0,0.9); }
+        .arena-box { width: 160px; height: 220px; background: #111; border: 3px solid #333; background-size: contain; background-repeat: no-repeat; background-position: center; border-radius: 10px; }
+        .audio-controls { display: flex; gap: 5px; margin-top: 10px; width: 100%; }
+        .btn-audio { flex: 1; padding: 8px; font-size: 10px; background: #222; color: #fff; border: 1px solid #444; border-radius: 5px; cursor: pointer; }
+        .btn-audio:active { background: #444; }
     </style>
 </head>
 <body>
 
-<div id="menu-toggle" onclick="toggleMenu()">⚙️</div>
+<div id="menu-toggle" onclick="toggleMenu()">☰</div>
 
 <aside id="sidebar">
-    <div class="nav-tabs">
-        <button id="tab-u" class="active" onclick="switchTab('u')">PEÇAS</button>
-        <button id="tab-l" onclick="switchTab('l')">LOGS</button>
-        <button id="tab-a" onclick="switchTab('a')">ÁUDIO</button>
+    <div style="padding: 20px; border-bottom: 1px solid #333;">
+        <h2 style="color:var(--accent); font-size: 16px;">WAR ENGINE PRO</h2>
+        <label style="font-size: 12px; display: block; margin-top: 10px; cursor:pointer"><input type="checkbox" id="edit-mode" onchange="renderBoard()"> MODO EDIÇÃO</label>
     </div>
-    <div style="padding: 10px; background: #1a1a24; text-align: center;">
-        <label style="font-size: 11px; cursor: pointer; color: var(--accent)">
-            <input type="checkbox" id="edit-mode" onchange="renderBoard()"> 🛠 MODO EDIÇÃO (REMOVER PEÇAS)
-        </label>
+    <div class="tabs">
+        <button id="t-white" class="active" onclick="showTab('white')">BRANCAS</button>
+        <button id="t-black" onclick="showTab('black')">PRETAS</button>
+        <button id="t-sys" onclick="showTab('sys')">SISTEMA</button>
     </div>
-    <div style="display:flex; padding:5px; gap:5px; background:#111">
-        <button onclick="changeTeam('B')" style="flex:1; padding:8px; font-size:10px; cursor:pointer">BRANCAS</button>
-        <button onclick="changeTeam('P')" style="flex:1; padding:8px; font-size:10px; cursor:pointer">PRETAS</button>
+    <div class="scroll-area" id="list-white"></div>
+    <div class="scroll-area" id="list-black" style="display:none"></div>
+    <div class="scroll-area" id="list-sys" style="display:none">
+        <div class="unit-card"><b>MASTER VOLUME</b><input type="range" id="v-master" min="0" max="1" step="0.1" value="1" style="width:100%"></div>
+        <button class="btn" onclick="rollInitiative()" style="background:#222; color:var(--accent)">🎲 SORTEAR INÍCIO</button>
     </div>
-    <div class="scroll-area">
-        <div id="list-u">
-            <div class="unit-card">
-                <b id="avatar-title">COMANDANTE</b><br>
-                <input type="file" onchange="upAvatar(this)" style="font-size:10px; margin-top:5px"><br>
-                HINO VITÓRIA: <input type="file" onchange="upHino(this)" style="font-size:10px; width:100%">
-            </div>
-            <div id="peças-cont"></div>
-        </div>
-        <div id="list-l" style="display:none"><div id="battle-logs"></div></div>
-        <div id="list-a" style="display:none">
-            <div class="unit-card">
-                <b>MIXER</b><br><br>
-                BGM: <input type="range" id="v-bgm" min="0" max="1" step="0.1" value="0.5" oninput="vols()" style="width:100%"><br>
-                SFX: <input type="range" id="v-sfx" min="0" max="1" step="0.1" value="0.7" oninput="vols()" style="width:100%"><br>
-                HINOS: <input type="range" id="v-win" min="0" max="1" step="0.1" value="0.8" oninput="vols()" style="width:100%">
-            </div>
-            <div class="unit-card"><b>BGM GLOBAL</b><input type="file" onchange="upGlobal(this)" style="width:100%"></div>
-        </div>
-    </div>
-    <button class="btn btn-yes" onclick="document.getElementById('m-starter').style.display='flex'">INICIAR</button>
+    <div style="padding: 20px; background: #000;"><button class="btn btn-yes" onclick="startBattle()">ATIVAR BATALHA</button></div>
 </aside>
 
-<main id="game-scene">
-    <div id="board-wrapper">
+<main>
+    <div class="board-wrapper">
+        <div class="coord-h top"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+        <div class="coord-h bottom"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
+        <div class="coord-v left"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
+        <div class="coord-v right"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
         <div id="board"></div>
     </div>
-    <div id="command-deck">
-        <div id="mini-B" class="avatar-frame"></div>
-        <div id="s-b" style="font-size:24px; font-weight:900">0</div>
-        <div style="font-weight:900; color:#333">VS</div>
-        <div id="mini-P" class="avatar-frame"></div>
-        <div id="s-p" style="font-size:24px; font-weight:900; color:var(--danger)">0</div>
+    <div id="dashboard">
+        <div id="card-B" class="player-card">
+            <div id="img-B" class="p-img" onclick="document.getElementById('f-av-B').click()"></div>
+            <div style="flex:1"><div style="font-size:10px; color:#888;">BRANCO</div><div id="score-B" class="p-score">0</div></div>
+            <input type="file" id="f-av-B" style="display:none" onchange="upAvatar('B', this)">
+        </div>
+        <div id="card-P" class="player-card">
+            <div id="img-P" class="p-img" onclick="document.getElementById('f-av-P').click()"></div>
+            <div style="flex:1"><div style="font-size:10px; color:#888;">PRETO</div><div id="score-P" class="p-score" style="color:var(--danger)">0</div></div>
+            <input type="file" id="f-av-P" style="display:none" onchange="upAvatar('P', this)">
+        </div>
     </div>
 </main>
 
-<div id="arena" class="overlay" style="flex-direction:column">
-    <div style="display:flex; gap:30px; align-items:center">
-        <div id="a-box" style="text-align:center">
-            <div id="a-img" style="width:150px; height:200px; border:4px solid var(--accent); background-size:contain; background-repeat:no-repeat; background-color:#111"></div>
-            <button class="btn" onclick="playSfx('atk')" style="background:#222; font-size:10px">PLAY SOM</button>
+<div id="arena" class="overlay">
+    <div style="background: #000; padding: 30px; border: 2px solid var(--accent); border-radius: 20px; display: flex; flex-direction: column; align-items: center; gap: 20px;">
+        <div style="display:flex; gap:30px; align-items:center">
+            <div style="text-align:center">
+                <div id="a-img" class="arena-box" style="border-color: var(--accent)"></div>
+                <div class="audio-controls">
+                    <button class="btn-audio" onclick="audioAction('atk','play')">▶ PLAY</button>
+                    <button class="btn-audio" onclick="audioAction('atk','pause')">⏸ PAUSE</button>
+                </div>
+                <button class="btn btn-yes" onclick="finishDuel('atk')" style="margin-top:10px">VENCEU</button>
+            </div>
+            <h1 style="font-size:40px">⚔️</h1>
+            <div style="text-align:center">
+                <div id="d-img" class="arena-box" style="border-color: var(--danger)"></div>
+                <div class="audio-controls">
+                    <button class="btn-audio" onclick="audioAction('def','play')">▶ PLAY</button>
+                    <button class="btn-audio" onclick="audioAction('def','pause')">⏸ PAUSE</button>
+                </div>
+                <button class="btn" onclick="finishDuel('def')" style="background:var(--danger); color:#fff; margin-top:10px">VENCEU</button>
+            </div>
         </div>
-        <h1 style="font-size:40px">⚔️</h1>
-        <div id="d-box" style="text-align:center">
-            <div id="d-img" style="width:150px; height:200px; border:4px solid var(--danger); background-size:contain; background-repeat:no-repeat; background-color:#111"></div>
-            <button class="btn" onclick="playSfx('def')" style="background:#222; font-size:10px">PLAY SOM</button>
-        </div>
+        <button class="btn" onclick="closeArena()" style="background:#222; font-size:11px">CANCELAR</button>
     </div>
-    <button class="btn btn-yes" style="width:280px; margin-top:30px" onclick="finishDuel(true)">VITÓRIA</button>
 </div>
 
-<div id="m-confirm-move" class="overlay"><div class="modal"><h2>MARCHAR?</h2><button class="btn btn-yes" onclick="confirmMove(true)">SIM</button><button class="btn" onclick="confirmMove(false)" style="background:#222">NÃO</button></div></div>
-<div id="m-starter" class="overlay"><div class="modal"><h2>QUEM COMEÇA?</h2><button class="btn btn-yes" onclick="boot('B')">BRANCAS</button><button class="btn btn-atk" onclick="boot('P')">PRETAS</button></div></div>
-<div id="m-victory" class="overlay"><div class="modal"><h1>VENCEDOR!</h1><div id="win-photo" style="width:100px; height:100px; border-radius:50%; margin:15px auto; background-size:cover; border:3px solid var(--accent)"></div><h2 id="win-name"></h2><button class="btn btn-yes" onclick="location.reload()">REINICIAR</button></div></div>
-
 <script>
-    let db, store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:'', hinoB:'', hinoP:'', bgm:'', volBGM:0.5, volSFX:0.7, volWin:0.8}, logs: [] };
-    const req = indexedDB.open("WarAbsolute_v29_7", 1);
+    let db, store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''} };
+    const req = indexedDB.open("WarUltimate_v31_12", 1);
     req.onupgradeneeded = e => e.target.result.createObjectStore("assets");
     req.onsuccess = e => { db = e.target.result; loadData(); };
 
-    let isLive = false, turn = 'B', sel = null, pending = null, currentTeam = 'B';
-    let audioBGM = new Audio(), audioWin = new Audio(), audioSFX = new Audio(); audioBGM.loop = true;
+    let isLive = false, turn = 'B', sel = null, pending = null;
+    let audioAtk = new Audio(), audioDef = new Audio();
 
-    const initialLayout = ['T1_P','C1_P','B1_P','Q1_P','K1_P','B2_P','C2_P','T2_P','P1_P','P2_P','P3_P','P4_P','P5_P','P6_P','P7_P','P8_P',...Array(32).fill(null),'P1_B','P2_B','P3_B','P4_B','P5_B','P6_B','P7_B','P8_B','T1_B','C1_B','B1_B','Q1_B','K1_B','B2_B','C2_B','T2_B'];
-    let board = [...initialLayout];
+    const peçasIds = ['T1','C1','B1','Q1','K1','B2','C2','T2','P1','P2','P3','P4','P5','P6','P7','P8'];
+    const layout = [...peçasIds.map(p=>p+'_P'), ...Array(32).fill(null), ...peçasIds.map(p=>p+'_B')];
+    let board = [...layout];
 
     function loadData() {
         db.transaction("assets").objectStore("assets").get("all").onsuccess = e => {
             if(e.target.result) store = e.target.result;
-            if(store.g.bgm) audioBGM.src = store.g.bgm;
-            vols(); updateUI(); changeTeam('B'); renderBoard();
+            renderBoard(); updateUI(); renderConfigLists();
         };
-    }
-
-    function getCoord(i) { return ['A','B','C','D','E','F','G','H'][i%8] + (8 - Math.floor(i/8)); }
-    function addLog(msg) { store.logs.unshift(`[${new Date().toLocaleTimeString()}] ${msg}`); document.getElementById('battle-logs').innerHTML = store.logs.map(l => `<div class="log-entry">${l}</div>`).join(''); }
-
-    function vols() {
-        audioBGM.volume = document.getElementById('v-bgm').value;
-        audioWin.volume = document.getElementById('v-win').value;
-        audioSFX.volume = document.getElementById('v-sfx').value;
     }
 
     function renderBoard() {
         const b = document.getElementById('board'); b.innerHTML = '';
         const isEdit = document.getElementById('edit-mode').checked;
-        const letras = ['A','B','C','D','E','F','G','H'];
-
         board.forEach((id, i) => {
             const sq = document.createElement('div'); sq.className = `sq ${(Math.floor(i/8)+i%8)%2==0?'l':'d'}`;
             sq.onclick = () => handleSq(i);
-            if(i%8===0){ let v=document.createElement('div'); v.className='coord-v'; v.innerText=8-Math.floor(i/8); sq.appendChild(v); }
-            if(Math.floor(i/8)===7){ let h=document.createElement('div'); h.className='coord-h'; h.innerText=letras[i%8]; sq.appendChild(h); }
-
             if(id) {
-                const cont = document.createElement('div'); cont.className = 'piece-container';
+                const cont = document.createElement('div'); cont.className='piece-container';
                 const p = document.createElement('div'); p.className = 'piece';
                 if(store.p[id]?.img) p.style.backgroundImage = `url(${store.p[id].img})`;
                 else p.style.backgroundColor = id.endsWith('_B') ? '#fff' : '#f05';
                 cont.appendChild(p);
                 if(isEdit) {
                     const x = document.createElement('div'); x.className='btn-remove'; x.innerText='×';
-                    x.onclick=(e)=>{ e.stopPropagation(); board[i]=null; renderBoard(); };
+                    x.onclick=(e)=>{ e.stopPropagation(); board[i]=null; renderBoard(); save(); };
                     cont.appendChild(x);
                 }
                 sq.appendChild(cont);
@@ -191,12 +170,34 @@
     function handleSq(i) {
         if(!isLive) return;
         if(sel === null) {
-            if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.boxShadow = "inset 0 0 20px var(--accent)"; }
+            if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
         } else {
-            if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.boxShadow = "inset 0 0 20px var(--accent)"; }
-            else if(board[i]) { pending = {f:sel, t:i}; document.getElementById('arena').style.display = 'flex'; updateArena(); }
-            else { pending = {f:sel, t:i}; document.getElementById('m-confirm-move').style.display = 'flex'; }
+            if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
+            else if(board[i]) { 
+                pending = {f:sel, t:i}; 
+                setupArenaAudio();
+                document.getElementById('arena').style.display = 'flex'; 
+                updateArena(); 
+            }
+            else { board[i]=board[sel]; board[sel]=null; nextTurn(); }
         }
+    }
+
+    function setupArenaAudio() {
+        const idAtk = board[pending.f];
+        const idDef = board[pending.t];
+        
+        audioAtk.src = store.p[idAtk]?.snd || "";
+        audioDef.src = store.p[idDef]?.snd || "";
+        
+        audioAtk.volume = (store.p[idAtk]?.vol ?? 0.7) * document.getElementById('v-master').value;
+        audioDef.volume = (store.p[idDef]?.vol ?? 0.7) * document.getElementById('v-master').value;
+    }
+
+    function audioAction(role, act) {
+        const audio = role === 'atk' ? audioAtk : audioDef;
+        if(act === 'play') audio.play();
+        else audio.pause();
     }
 
     function updateArena() {
@@ -204,81 +205,61 @@
         document.getElementById('d-img').style.backgroundImage = `url(${store.p[board[pending.t]]?.img || ''})`;
     }
 
-    function playSfx(role) {
-        const id = role === 'atk' ? board[pending.f] : board[pending.t];
-        const img = role === 'atk' ? document.getElementById('a-img') : document.getElementById('d-img');
-        const anim = role === 'atk' ? 'anim-atk' : 'anim-def';
-        if(store.p[id]?.snd) { audioSFX.src = store.p[id].snd; audioSFX.play(); }
-        img.classList.remove(anim); void img.offsetWidth; img.classList.add(anim);
-    }
-
-    function confirmMove(ok) {
-        document.getElementById('m-confirm-move').style.display = 'none';
-        if(ok) { addLog(`${turn} -> ${getCoord(pending.t)}`); board[pending.t] = board[pending.f]; board[pending.f] = null; turn = turn === 'B' ? 'P' : 'B'; }
-        sel = null; renderBoard(); updateUI();
-    }
-
-    function finishDuel(win) {
-        document.getElementById('arena').style.display = 'none';
-        if(win) { 
-            document.getElementById('game-scene').classList.add('shake'); setTimeout(()=>document.getElementById('game-scene').classList.remove('shake'),300);
-            if(turn === 'B') store.g.killsB++; else store.g.killsP++;
-            addLog(`ABATE em ${getCoord(pending.t)}`);
-            board[pending.t] = board[pending.f]; board[pending.f] = null; turn = turn === 'B' ? 'P' : 'B'; 
+    function finishDuel(winner) {
+        closeArena();
+        if(winner==='atk') {
+            if(turn==='B') store.g.killsB++; else store.g.killsP++;
+            board[pending.t]=board[pending.f]; board[pending.f]=null;
+        } else {
+            if(turn==='B') store.g.killsP++; else store.g.killsB++;
+            board[pending.f]=null;
         }
-        sel = null; renderBoard(); updateUI(); checkVictory();
+        nextTurn(); save();
     }
 
-    function checkVictory() {
-        const b = board.some(p => p?.endsWith('_B')), p = board.some(p => p?.endsWith('_P'));
-        if(!b || !p) {
-            const w = b ? 'B' : 'P'; audioBGM.pause();
-            if(store.g['hino'+w]) { audioWin.src = store.g['hino'+w]; audioWin.play(); }
-            document.getElementById('win-name').innerText = w==='B'?'BRANCAS VENCERAM':'PRETAS VENCERAM';
-            document.getElementById('win-photo').style.backgroundImage = `url(${store.g['avatar'+w]})`;
-            document.getElementById('m-victory').style.display = 'flex'; isLive = false;
-        }
-    }
-
-    function updateUI() {
-        document.getElementById('s-b').innerText = store.g.killsB;
-        document.getElementById('s-p').innerText = store.g.killsP;
-        document.getElementById('mini-B').style.backgroundImage = `url(${store.g.avatarB})`;
-        document.getElementById('mini-P').style.backgroundImage = `url(${store.g.avatarP})`;
-        document.getElementById('mini-B').className = 'avatar-frame' + (turn==='B' && isLive ? ' turn-active-B' : '');
-        document.getElementById('mini-P').className = 'avatar-frame' + (turn==='P' && isLive ? ' turn-active-P' : '');
-    }
-
-    function changeTeam(t) {
-        currentTeam = t;
-        document.getElementById('avatar-title').innerText = `COMANDANTE: ${t==='B'?'BRANCAS':'PRETAS'}`;
-        renderList();
-    }
-
-    function renderList() {
-        const cont = document.getElementById('peças-cont'); cont.innerHTML = '';
-        const types = ['T1','C1','B1','Q1','K1','B2','C2','T2','P1','P2','P3','P4','P5','P6','P7','P8'];
-        types.forEach(t => {
-            const id = `${t}_${currentTeam}`;
-            if(!store.p[id]) store.p[id] = { img: '', snd: '' };
-            const d = document.createElement('div'); d.className = 'unit-card';
-            d.innerHTML = `<b>${id}</b><br>
-                IMG: <input type="file" onchange="upFile('${id}','img',this)" style="font-size:10px; width:100%"><br>
-                SOM: <input type="file" onchange="upFile('${id}','snd',this)" style="font-size:10px; width:100%">`;
-            cont.appendChild(d);
+    function renderConfigLists() {
+        ['white','black'].forEach(side => {
+            const team = side === 'white' ? 'B' : 'P';
+            const cont = document.getElementById('list-'+side);
+            cont.innerHTML = `<h3>PEÇAS ${side.toUpperCase()}</h3>`;
+            peçasIds.forEach(p => {
+                const id = `${p}_${team}`;
+                if(!store.p[id]) store.p[id] = {vol: 0.7};
+                const d = document.createElement('div'); d.className = 'unit-card';
+                d.innerHTML = `<b>${id}</b><br>
+                    IMG: <input type="file" onchange="upPiece('${id}','img',this)"><br>
+                    SOM: <input type="file" onchange="upPiece('${id}','snd',this)"><br>
+                    VOL: <input type="range" min="0" max="1" step="0.1" value="${store.p[id].vol}" oninput="updatePieceVol('${id}', this.value)">`;
+                cont.appendChild(d);
+            });
         });
     }
 
-    function upFile(id, ty, i) { const r = new FileReader(); r.onload = e => { store.p[id][ty] = e.target.result; save(); renderList(); renderBoard(); }; r.readAsDataURL(i.files[0]); }
-    function upAvatar(i) { const r = new FileReader(); r.onload = e => { if(currentTeam === 'B') store.g.avatarB = e.target.result; else store.g.avatarP = e.target.result; save(); updateUI(); }; r.readAsDataURL(i.files[0]); }
-    function upHino(i) { const r = new FileReader(); r.onload = e => { if(currentTeam === 'B') store.g.hinoB = e.target.result; else store.g.hinoP = e.target.result; save(); }; r.readAsDataURL(i.files[0]); }
-    function upGlobal(i) { const r = new FileReader(); r.onload = e => { store.g.bgm = e.target.result; audioBGM.src = e.target.result; save(); }; r.readAsDataURL(i.files[0]); }
-    function save() { db.transaction("assets","readwrite").objectStore("assets").put(store,"all"); }
+    function updatePieceVol(id, val) { store.p[id].vol = parseFloat(val); save(); }
+    function upPiece(id, type, input) {
+        const r = new FileReader(); r.onload = e => { store.p[id][type] = e.target.result; save(); renderBoard(); };
+        r.readAsDataURL(input.files[0]);
+    }
+    function upAvatar(side, input) {
+        const r = new FileReader(); r.onload = e => { store.g['avatar'+side] = e.target.result; save(); updateUI(); };
+        r.readAsDataURL(input.files[0]);
+    }
+    function showTab(t) {
+        ['white','black','sys'].forEach(id => document.getElementById('list-'+id).style.display = (id===t?'block':'none'));
+        ['t-white','t-black','t-sys'].forEach(id => document.getElementById(id).className = (id==='t-'+t?'active':''));
+    }
+    function nextTurn() { turn = turn==='B'?'P':'B'; sel=null; renderBoard(); updateUI(); }
+    function closeArena() { document.getElementById('arena').style.display='none'; audioAtk.pause(); audioDef.pause(); }
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
-    function switchTab(t) { document.getElementById('list-u').style.display = t==='u'?'block':'none'; document.getElementById('list-l').style.display = t==='l'?'block':'none'; document.getElementById('list-a').style.display = t==='a'?'block':'none'; document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active')); document.getElementById('tab-'+t).classList.add('active'); }
-    function boot(team) { isLive = true; turn = team; document.getElementById('m-starter').style.display='none'; if(audioBGM.src) audioBGM.play(); toggleMenu(); updateUI(); }
-
-    renderBoard();
+    function startBattle() { isLive=true; toggleMenu(); updateUI(); }
+    function rollInitiative() { turn = Math.random() < 0.5 ? 'B' : 'P'; updateUI(); alert("Começa: " + (turn==='B'?'BRANCO':'PRETO')); }
+    function updateUI() {
+        document.getElementById('score-B').innerText = store.g.killsB; document.getElementById('score-P').innerText = store.g.killsP;
+        document.getElementById('img-B').style.backgroundImage = `url(${store.g.avatarB})`; document.getElementById('img-P').style.backgroundImage = `url(${store.g.avatarP})`;
+        document.getElementById('card-B').className = 'player-card' + (turn==='B'&&isLive?' active-B':'');
+        document.getElementById('card-P').className = 'player-card' + (turn==='P'&&isLive?' active-P':'');
+    }
+    function save() { db.transaction("assets","readwrite").objectStore("assets").put(store,"all"); }
 </script>
 </body>
 </html>
