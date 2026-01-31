@@ -2,122 +2,123 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>War Engine v7.0 - Ultra Adaptive</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>War Engine v21 - Commander</title>
     <style>
-        :root { 
-            --bg: #050505; --panel: #111115; --accent: #00e5ff; 
-            --sq-l: #2a2a30; --sq-d: #15151a;
-        }
-        
-        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); font-family: sans-serif; overflow: hidden; color: white; }
-        
+        :root { --bg: #030305; --panel: #0d0d12; --accent: #00e5ff; --danger: #ff0055; --sq-l: #25252b; --sq-d: #121217; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: var(--bg); font-family: sans-serif; color: white; overflow: hidden; }
         #app { display: flex; height: 100vh; width: 100vw; flex-direction: row; }
 
-        /* Ajuste Mobile de Alta Performance */
         @media (max-width: 900px) {
             #app { flex-direction: column; }
-            aside { 
-                width: 100% !important; 
-                height: 45vh !important; 
-                border-left: none !important; 
-                border-top: 2px solid var(--accent);
-                position: relative;
-                z-index: 100;
-            }
-            main { flex: 1; height: 55vh !important; }
-            #board { 
-                width: 85vw !important; 
-                height: 85vw !important; 
-                max-width: 40vh; /* Garante que não empurre o menu */
-                max-height: 40vh;
-            }
-            .p-card { padding: 5px !important; }
-            .p-card label { font-size: 7px !important; }
+            aside { width: 100% !important; height: 45% !important; border-top: 2px solid var(--accent); }
+            main { height: 55% !important; }
+            #board { width: 85vw !important; height: 85vw !important; max-width: 340px; }
         }
 
-        /* Sidebar com Scroll Interno */
-        aside { 
-            width: 380px; 
-            background: var(--panel); 
-            display: flex; 
-            flex-direction: column; 
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
+        aside { width: 380px; background: var(--panel); display: flex; flex-direction: column; border-right: 1px solid #222; }
+        .main-tabs { display: flex; height: 45px; background: #000; flex-shrink: 0; }
+        .tab-btn { flex: 1; border: none; background: transparent; color: #555; font-weight: 900; font-size: 10px; cursor: pointer; }
+        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+
+        .sub-tabs { display: flex; gap: 5px; padding: 10px; background: #15151e; }
+        .sub-btn { flex: 1; padding: 8px; font-size: 9px; border: 1px solid #333; background: #000; color: #fff; border-radius: 4px; cursor: pointer; }
+        .sub-btn.active { border-color: var(--accent); color: var(--accent); }
 
         .scroll-area { flex: 1; overflow-y: auto; padding: 15px; }
+        .p-card { background: #1a1a24; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #333; }
+        .p-card b { font-size: 11px; color: var(--accent); }
+        .p-card input { width: 100%; font-size: 9px; margin-top: 5px; opacity: 0.7; }
 
-        .tabs { display: flex; gap: 2px; position: sticky; top: 0; background: var(--panel); z-index: 10; padding-bottom: 10px; }
-        .tab-btn { flex: 1; padding: 10px 2px; font-size: 9px; background: #222; border: none; color: #777; cursor: pointer; border-radius: 3px; }
-        .tab-btn.active { background: var(--accent); color: #000; font-weight: bold; }
-
-        .tab-content { display: none; }
-        .tab-content.active { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-        .p-card { background: #1a1a22; padding: 10px; border-radius: 5px; border-bottom: 2px solid #333; }
-        .p-card label { font-size: 9px; color: var(--accent); display: block; margin-bottom: 4px; font-weight: bold; }
-        input[type="file"] { font-size: 8px; width: 100%; color: #666; }
-
-        /* Estética do Jogo */
-        main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #08080a; }
-        
-        #board { 
-            display: grid; grid-template-columns: repeat(8, 1fr); 
-            width: 70vh; height: 70vh; max-width: 500px; max-height: 500px; 
-            border: 8px solid #000; outline: 1px solid #333;
-        }
-
-        .square { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        main { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; background: radial-gradient(circle, #1a1a2e 0%, #030305 100%); }
+        #board { display: grid; grid-template-columns: repeat(8, 1fr); width: 75vh; height: 75vh; max-width: 500px; border: 8px solid #000; }
+        .sq { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .l { background: var(--sq-l); } .d { background: var(--sq-d); }
-        .highlight { background: rgba(0, 229, 255, 0.3) !important; box-shadow: inset 0 0 10px var(--accent); }
+        .selected { background: rgba(0, 229, 255, 0.3) !important; box-shadow: inset 0 0 15px var(--accent); }
+        .piece { width: 85%; height: 85%; background-size: contain; background-repeat: no-repeat; background-position: center; }
 
-        .piece { width: 85%; height: 85%; background-size: contain; background-repeat: no-repeat; background-position: center; transition: 0.2s; }
+        .overlay { display: none; position: absolute; inset: 0; z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(10px); background: rgba(0,0,0,0.8); }
+        .modal { background: var(--panel); border: 1px solid var(--accent); padding: 25px; border-radius: 15px; text-align: center; width: 85%; max-width: 300px; }
+        #arena { background: #000; flex-direction: column; }
+        #timer { font-size: 60px; font-weight: 900; color: var(--accent); font-family: monospace; }
+        .fighter { width: 120px; height: 180px; border: 2px solid var(--accent); border-radius: 10px; background-size: contain; background-repeat: no-repeat; background-position: center; }
 
-        .btn-start { 
-            background: var(--accent); color: #000; border: none; 
-            padding: 15px; font-weight: 900; cursor: pointer; width: 100%;
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-        
-        #turn-info { font-size: 11px; margin-top: 10px; letter-spacing: 2px; color: var(--accent); font-weight: bold; }
+        .btn { padding: 12px; border: none; border-radius: 8px; font-weight: 900; cursor: pointer; text-transform: uppercase; width: 100%; margin-top: 10px; }
+        .btn-confirm { background: var(--accent); color: #000; }
+        .btn-cancel { background: #222; color: #fff; }
+        .vol-slider { width: 100%; accent-color: var(--accent); }
     </style>
 </head>
 <body>
 
 <div id="app">
     <aside>
-        <div class="scroll-area">
-            <div class="tabs">
-                <button class="tab-btn active" onclick="tab('w')">BASE W</button>
-                <button class="tab-btn" onclick="tab('b')">BASE B</button>
-                <button class="tab-btn" onclick="tab('s')">SISTEMA</button>
-            </div>
+        <div class="main-tabs">
+            <button class="tab-btn active" onclick="setMainTab('units')">RECRUTAR</button>
+            <button class="tab-btn" onclick="setMainTab('audio')">ÁUDIO</button>
+            <button class="tab-btn" onclick="boot()" style="color:var(--accent)">START</button>
+        </div>
 
-            <div id="tab-w" class="tab-content active"></div>
-            <div id="tab-b" class="tab-content"></div>
-            <div id="tab-s" class="tab-content" style="grid-template-columns: 1fr;">
-                <div class="p-card"><label>MÚSICA (BGM)</label><input type="file" onchange="sys('bgm', this)"></div>
-                <div class="p-card"><label>VOLUME</label><input type="range" id="vol" min="0" max="1" step="0.1" value="0.5" style="width:100%"></div>
+        <div id="units-ctrl">
+            <div class="sub-tabs">
+                <button class="sub-btn active" id="btn-sub-b" onclick="setTeamTab('B')">BRANCAS</button>
+                <button class="sub-btn" id="btn-sub-p" onclick="setTeamTab('P')">PRETAS</button>
             </div>
         </div>
-        <button class="btn-start" onclick="start()">INICIAR OPERAÇÃO</button>
+        
+        <div class="scroll-area" id="config-scroll">
+            <div id="units-list"></div>
+            <div id="audio-list" style="display:none">
+                <div class="p-card">
+                    <b>MIXER DE VOLUMES</b>
+                    <label style="display:block; font-size:10px; margin-top:10px">MENU</label>
+                    <input type="range" id="v-menu" class="vol-slider" min="0" max="1" step="0.1" value="0.5" oninput="syncV()">
+                    <label style="display:block; font-size:10px; margin-top:10px">BATALHA</label>
+                    <input type="range" id="v-battle" class="vol-slider" min="0" max="1" step="0.1" value="0.8" oninput="syncV()">
+                </div>
+                <div class="p-card">
+                    <b>MÚSICA DO MENU</b>
+                    <input type="file" onchange="upSys('bgm', this)">
+                </div>
+            </div>
+        </div>
     </aside>
 
     <main>
+        <div id="ask-modal" class="overlay">
+            <div class="modal">
+                <h3>BATALHAR?</h3>
+                <button class="btn btn-confirm" onclick="openArena()">SIM (1 MIN)</button>
+                <button class="btn btn-cancel" onclick="pending=null; closeOverlays()">CANCELAR</button>
+            </div>
+        </div>
+
+        <div id="arena" class="overlay">
+            <div id="timer">01:00</div>
+            <div style="display:flex; gap:20px; margin:20px 0">
+                <div id="a-f" class="fighter"></div>
+                <div id="d-f" class="fighter" style="border-color:var(--danger)"></div>
+            </div>
+            <div id="arena-end" style="display:none; width:80%">
+                <button class="btn btn-confirm" onclick="solve(true)">VITÓRIA</button>
+                <button class="btn btn-cancel" onclick="solve(false)">RECUAR</button>
+            </div>
+        </div>
+
         <div id="board"></div>
-        <div id="turn-info">SISTEMA: OFFLINE</div>
     </main>
 </div>
 
 <script>
-    const dbName = "WarEngineV7";
     let db, store = { p: {}, g: {} };
-    const req = indexedDB.open(dbName, 1);
-    req.onupgradeneeded = e => e.target.result.createObjectStore("data");
+    const req = indexedDB.open("WarFinalDB", 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore("assets");
     req.onsuccess = e => { db = e.target.result; load(); };
 
-    let active = false, turn = 'B', sel = null;
-    let bgm = new Audio(); bgm.loop = true;
+    let isRun = false, turn = 'B', sel = null, pending = null, timer, currentTeam = 'B';
+    let menuAudio = new Audio(); menuAudio.loop = true;
+    let battleAudio = new Audio(); battleAudio.loop = true;
 
     const layout = [
         'T1_P','C1_P','B1_P','Q_P','K_P','B2_P','C2_P','T2_P',
@@ -129,90 +130,107 @@
     let board = [...layout];
 
     function load() {
-        db.transaction("data").objectStore("data").get("assets").onsuccess = e => {
+        db.transaction("assets").objectStore("assets").get("all").onsuccess = e => {
             if(e.target.result) {
                 store = e.target.result;
-                if(store.g.bgm) bgm.src = store.g.bgm;
+                if(store.g.bgm) menuAudio.src = store.g.bgm;
             }
-            initUI();
+            renderUnits();
+            renderBoard();
         };
     }
 
-    function initUI() {
-        layout.forEach(id => {
-            if(!id) return;
-            const container = document.getElementById(id.endsWith('_B') ? 'tab-w' : 'tab-b');
-            if(!store.p[id]) store.p[id] = { img: '' };
-            const card = document.createElement('div');
-            card.className = 'p-card';
-            card.innerHTML = `<label>${id}</label><input type="file" onchange="up('${id}', this)">`;
-            container.appendChild(card);
+    function renderUnits() {
+        const list = document.getElementById('units-list');
+        list.innerHTML = '';
+        const types = ['T1','C1','B1','Q','K','B2','C2','T2','P1','P2','P3','P4','P5','P6','P7','P8'];
+        types.forEach(t => {
+            const id = `${t}_${currentTeam}`;
+            if(!store.p[id]) store.p[id] = { img: '', snd: '' };
+            const d = document.createElement('div'); d.className = 'p-card';
+            d.innerHTML = `<b>${id}</b><br>
+                IMG: <input type="file" onchange="upP('${id}','img',this)">
+                SOM: <input type="file" onchange="upP('${id}','snd',this)">`;
+            list.appendChild(d);
         });
-        render();
     }
 
-    function up(id, input) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            store.p[id].img = e.target.result;
-            db.transaction("data", "readwrite").objectStore("data").put(store, "assets");
-            render();
-        };
-        reader.readAsDataURL(input.files[0]);
+    function setTeamTab(t) {
+        currentTeam = t;
+        document.getElementById('btn-sub-b').classList.toggle('active', t==='B');
+        document.getElementById('btn-sub-p').classList.toggle('active', t==='P');
+        renderUnits();
     }
 
-    function sys(type, input) {
-        const reader = new FileReader();
-        reader.onload = e => {
-            store.g[type] = e.target.result;
-            db.transaction("data", "readwrite").objectStore("data").put(store, "assets");
-            if(type === 'bgm') { bgm.src = e.target.result; bgm.play(); }
-        };
-        reader.readAsDataURL(input.files[0]);
+    function setMainTab(t) {
+        document.getElementById('units-ctrl').style.display = t==='units'?'block':'none';
+        document.getElementById('units-list').style.display = t==='units'?'block':'none';
+        document.getElementById('audio-list').style.display = t==='audio'?'block':'none';
+        document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&t==='units')||(i===1&&t==='audio')));
     }
 
-    function render() {
-        const b = document.getElementById('board');
-        b.innerHTML = '';
+    function handleSq(i) {
+        if(!isRun) return;
+        if(sel === null) {
+            if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].classList.add('selected'); }
+        } else {
+            if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].classList.add('selected'); }
+            else if(board[i]) { pending = {f:sel, t:i}; document.getElementById('ask-modal').style.display='flex'; }
+            else { move(sel, i); }
+        }
+    }
+
+    function openArena() {
+        document.getElementById('ask-modal').style.display='none';
+        const atk = board[pending.f], def = board[pending.t];
+        document.getElementById('a-f').style.backgroundImage = `url(${store.p[atk].img})`;
+        document.getElementById('d-f').style.backgroundImage = `url(${store.p[def].img})`;
+        document.getElementById('arena').style.display='flex';
+        document.getElementById('arena-end').style.display='none';
+        
+        menuAudio.volume = 0.05;
+        if(store.p[atk].snd) { battleAudio.src = store.p[atk].snd; battleAudio.play(); }
+
+        let s = 60;
+        timer = setInterval(() => {
+            s--; document.getElementById('timer').innerText = `00:${s<10?'0'+s:s}`;
+            if(s<=0) { clearInterval(timer); document.getElementById('arena-end').style.display='block'; }
+        }, 1000);
+    }
+
+    function solve(win) {
+        clearInterval(timer); document.getElementById('arena').style.display='none';
+        battleAudio.pause(); syncV();
+        if(win) move(pending.f, pending.t);
+        sel = null; renderBoard();
+    }
+
+    function move(f, t) { board[t]=board[f]; board[f]=null; turn=turn==='B'?'P':'B'; sel=null; renderBoard(); }
+    function closeOverlays() { document.querySelectorAll('.overlay').forEach(o=>o.style.display='none'); sel=null; renderBoard(); }
+
+    function renderBoard() {
+        const b = document.getElementById('board'); b.innerHTML = '';
         board.forEach((id, i) => {
-            const sq = document.createElement('div');
-            sq.className = `square ${(Math.floor(i/8)+i%8)%2==0?'l':'d'}`;
-            sq.onclick = () => click(i);
-            if(id) {
-                const p = document.createElement('div');
-                p.className = 'piece';
-                if(store.p[id]?.img) p.style.backgroundImage = `url(${store.p[id].img})`;
-                else p.style.backgroundColor = id.endsWith('_B') ? '#fff' : '#ff0055';
+            const sq = document.createElement('div'); sq.className = `sq ${(Math.floor(i/8)+i%8)%2==0?'l':'d'}`;
+            sq.onclick = () => handleSq(i);
+            if(id && store.p[id]?.img) {
+                const p = document.createElement('div'); p.className = 'piece';
+                p.style.backgroundImage = `url(${store.p[id].img})`;
+                sq.appendChild(p);
+            } else if(id) {
+                const p = document.createElement('div'); p.className = 'piece';
+                p.style.backgroundColor = id.endsWith('_B') ? '#fff' : '#f05';
                 sq.appendChild(p);
             }
             b.appendChild(sq);
         });
     }
 
-    function click(i) {
-        if(!active) return;
-        const p = board[i];
-        if(sel === null) {
-            if(p && p.endsWith('_' + turn)) { sel = i; render(); document.getElementById('board').children[i].classList.add('highlight'); }
-        } else {
-            if(p && p.endsWith('_' + turn)) { sel = i; render(); document.getElementById('board').children[i].classList.add('highlight'); }
-            else {
-                board[i] = board[sel]; board[sel] = null;
-                turn = turn === 'B' ? 'P' : 'B';
-                sel = null; render();
-                document.getElementById('turn-info').innerText = "TURNO: " + (turn === 'B' ? 'BRANCO' : 'PRETO');
-            }
-        }
-    }
-
-    function start() { active = true; if(bgm.src) bgm.play(); document.getElementById('turn-info').innerText = "SISTEMA ONLINE - TURNO: BRANCO"; }
-    function tab(t) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('tab-'+t).classList.add('active');
-        event.currentTarget.classList.add('active');
-    }
-    document.getElementById('vol').oninput = e => bgm.volume = e.target.value;
+    function upP(id, ty, i) { const r = new FileReader(); r.onload = e => { store.p[id][ty]=e.target.result; save(); renderBoard(); }; r.readAsDataURL(i.files[0]); }
+    function upSys(ty, i) { const r = new FileReader(); r.onload = e => { store.g[ty]=e.target.result; save(); if(ty==='bgm'){menuAudio.src=e.target.result; menuAudio.play();} }; r.readAsDataURL(i.files[0]); }
+    function save() { db.transaction("assets","readwrite").objectStore("assets").put(store,"all"); }
+    function syncV() { menuAudio.volume = document.getElementById('v-menu').value; battleAudio.volume = document.getElementById('v-battle').value; }
+    function boot() { isRun = true; syncV(); if(menuAudio.src) menuAudio.play(); alert("War Engine Ativado!"); }
 </script>
 </body>
 </html>
