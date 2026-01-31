@@ -3,210 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>War Engine v28.9 - Visual Status</title>
+    <title>War Engine v29.7 - Absolute</title>
     <style>
-        :root { --bg: #050508; --panel: #0d0d12; --accent: #00e5ff; --danger: #ff0055; --sq-l: #1e1e24; --sq-d: #0a0a0f; }
+        :root { --bg: #050508; --panel: #0d0d12; --accent: #00e5ff; --danger: #ff0055; --sq-l: #1e1e24; --sq-d: #0a0a0f; --coord: #555; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body, html { height: 100%; width: 100%; background: var(--bg); font-family: sans-serif; color: white; overflow: hidden; }
 
-        /* CONFETTI */
-        .confetti { position: absolute; width: 8px; height: 8px; z-index: 7000; animation: fall linear forwards; }
-        @keyframes fall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
+        /* ANIMAÇÕES */
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 20% { transform: translate(-3px, 0px); } 40% { transform: translate(3px, 2px); } 60% { transform: translate(-1px, -1px); } 100% { transform: translate(0px, 0px); } }
+        .shake { animation: shake 0.3s ease-in-out; }
+        @keyframes atk-l { 0% { transform: translateX(0); } 50% { transform: translateX(40px) scale(1.1); } 100% { transform: translateX(0); } }
+        @keyframes atk-r { 0% { transform: translateX(0); } 50% { transform: translateX(-40px) scale(1.1); } 100% { transform: translateX(0); } }
+        .anim-atk { animation: atk-l 0.4s ease-in-out; }
+        .anim-def { animation: atk-r 0.4s ease-in-out; }
 
-        /* UI */
-        #menu-toggle { position: fixed; top: 15px; left: 15px; z-index: 5000; width: 45px; height: 45px; background: var(--accent); border-radius: 8px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
-        #menu-toggle span { width: 24px; height: 3px; background: #000; position: relative; }
-        #menu-toggle span::before, #menu-toggle span::after { content:''; position:absolute; width:24px; height:3px; background:#000; left:0; }
-        #menu-toggle span::before { top: -7px; } #menu-toggle span::after { top: 7px; }
-
+        /* UI E MENU */
+        #menu-toggle { position: fixed; top: 15px; left: 15px; z-index: 7000; width: 45px; height: 45px; background: var(--accent); border-radius: 8px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: #000; font-weight: bold; }
         aside { position: fixed; top: 0; left: -350px; width: 320px; height: 100%; background: var(--panel); border-right: 2px solid var(--accent); transition: 0.4s; z-index: 4000; display: flex; flex-direction: column; }
         aside.open { left: 0; }
         .nav-tabs { display: flex; background: #000; }
-        .nav-tabs button { flex: 1; padding: 15px; border: none; background: transparent; color: #555; font-weight: 900; cursor: pointer; }
+        .nav-tabs button { flex: 1; padding: 15px; border: none; background: transparent; color: #555; font-weight: 900; cursor: pointer; font-size: 11px; }
         .nav-tabs button.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
         .scroll-area { flex: 1; overflow-y: auto; padding: 15px; }
-        .unit-card { background: #15151c; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #222; position: relative; }
-        .status-badge { font-size: 9px; padding: 2px 6px; border-radius: 4px; float: right; }
-        .loaded { background: #00ff8833; color: #00ff88; border: 1px solid #00ff8855; }
+        .unit-card { background: #15151c; padding: 12px; border-radius: 10px; margin-bottom: 10px; border: 1px solid #222; }
 
-        /* LAYOUT PRINCIPAL */
-        main { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; gap: 30px; padding: 20px; }
-        #board { display: grid; grid-template-columns: repeat(8, 1fr); width: 82vmin; height: 82vmin; max-width: 550px; border: 4px solid #000; }
-        .sq { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        /* TABULEIRO */
+        main { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; gap: 30px; }
+        #board-wrapper { position: relative; padding: 25px; background: #000; border-radius: 10px; }
+        #board { display: grid; grid-template-columns: repeat(8, 1fr); width: 80vmin; height: 80vmin; max-width: 550px; border: 2px solid #333; }
+        .sq { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; cursor: pointer; position: relative; }
         .l { background: var(--sq-l); } .d { background: var(--sq-d); }
-        .piece { width: 85%; height: 85%; background-size: contain; background-repeat: no-repeat; background-position: center; }
+        
+        .coord-h { position: absolute; bottom: -22px; width: 100%; text-align: center; font-size: 11px; color: var(--coord); font-weight: bold; }
+        .coord-v { position: absolute; left: -22px; height: 100%; display: flex; align-items: center; font-size: 11px; color: var(--coord); font-weight: bold; }
 
-        /* TORRE DE COMANDO */
-        #command-deck { display: flex; flex-direction: column; gap: 20px; background: rgba(13,13,18,0.8); padding: 25px; border-radius: 20px; border: 1px solid #333; align-items: center; }
-        .avatar-frame { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #444; background-size: cover; background-position: center; transition: 0.3s; }
-        .turn-active-B { border-color: #fff !important; box-shadow: 0 0 20px #fff; transform: scale(1.1); }
-        .turn-active-P { border-color: var(--danger) !important; box-shadow: 0 0 20px var(--danger); transform: scale(1.1); }
-        .score-box { font-size: 28px; font-weight: 900; }
+        .piece-container { width: 88%; height: 88%; position: relative; display: flex; justify-content: center; align-items: center; }
+        .piece { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 2; transition: 0.3s; }
+        
+        .btn-remove { position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: var(--danger); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; z-index: 10; border: 2px solid white; cursor: pointer; }
 
         /* MODAIS */
         .overlay { display: none; position: fixed; inset: 0; z-index: 6000; align-items: center; justify-content: center; backdrop-filter: blur(15px); background: rgba(0,0,0,0.8); }
-        .modal { background: var(--panel); padding: 30px; border-radius: 25px; border: 1px solid var(--accent); width: 320px; text-align: center; }
-        .btn { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: 900; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
+        .modal { background: var(--panel); padding: 30px; border-radius: 20px; border: 1px solid var(--accent); width: 320px; text-align: center; }
+        .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 900; cursor: pointer; margin-top: 10px; text-transform: uppercase; }
         .btn-yes { background: var(--accent); color: #000; }
         .btn-atk { background: var(--danger); color: #fff; }
+
+        /* HUD */
+        #command-deck { display: flex; flex-direction: column; gap: 15px; background: rgba(13,13,18,0.9); padding: 20px; border-radius: 20px; border: 1px solid #333; align-items: center; }
+        .avatar-frame { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #444; background-size: cover; background-position: center; background-color: #000; transition: 0.3s; }
+        .turn-active-B { border-color: #fff !important; box-shadow: 0 0 20px #fff; }
+        .turn-active-P { border-color: var(--danger) !important; box-shadow: 0 0 20px var(--danger); }
+        .log-entry { font-size: 10px; padding: 5px; border-bottom: 1px solid #222; color: #aaa; font-family: monospace; }
     </style>
 </head>
 <body>
 
-<div id="menu-toggle" onclick="toggleMenu()"><span></span></div>
+<div id="menu-toggle" onclick="toggleMenu()">⚙️</div>
 
 <aside id="sidebar">
     <div class="nav-tabs">
         <button id="tab-u" class="active" onclick="switchTab('u')">PEÇAS</button>
-        <button id="tab-a" onclick="switchTab('a')">ÁUDIO/MIXER</button>
+        <button id="tab-l" onclick="switchTab('l')">LOGS</button>
+        <button id="tab-a" onclick="switchTab('a')">ÁUDIO</button>
     </div>
-    <div style="display:flex; padding:10px; gap:10px; background:#111">
-        <button onclick="changeTeam('B')" id="btn-B" style="flex:1; padding:8px; cursor:pointer; background:#333; color:#fff; border:1px solid #fff">BRANCAS</button>
-        <button onclick="changeTeam('P')" id="btn-P" style="flex:1; padding:8px; cursor:pointer; background:#000; color:var(--danger); border:1px solid var(--danger)">PRETAS</button>
+    <div style="padding: 10px; background: #1a1a24; text-align: center;">
+        <label style="font-size: 11px; cursor: pointer; color: var(--accent)">
+            <input type="checkbox" id="edit-mode" onchange="renderBoard()"> 🛠 MODO EDIÇÃO (REMOVER PEÇAS)
+        </label>
+    </div>
+    <div style="display:flex; padding:5px; gap:5px; background:#111">
+        <button onclick="changeTeam('B')" style="flex:1; padding:8px; font-size:10px; cursor:pointer">BRANCAS</button>
+        <button onclick="changeTeam('P')" style="flex:1; padding:8px; font-size:10px; cursor:pointer">PRETAS</button>
     </div>
     <div class="scroll-area">
         <div id="list-u">
             <div class="unit-card">
-                <b id="avatar-title" style="color:#fff">AVATAR: COMANDANTE BRANCAS</b><br>
-                <div style="display:flex; align-items:center; gap:10px; margin-top:8px">
-                    <div id="side-preview" style="width:45px; height:45px; border-radius:50%; border:2px solid #555; background-size:cover; background-position:center; background-color:#000"></div>
-                    <input type="file" onchange="upAvatar(this)" style="flex:1; font-size:10px">
-                </div>
-                <div id="hino-status" style="margin-top:10px; font-size:10px">Hino: <span>Aguardando...</span></div>
-                <input type="file" onchange="upHino(this)" style="width:100%; font-size:10px; margin-top:5px">
+                <b id="avatar-title">COMANDANTE</b><br>
+                <input type="file" onchange="upAvatar(this)" style="font-size:10px; margin-top:5px"><br>
+                HINO VITÓRIA: <input type="file" onchange="upHino(this)" style="font-size:10px; width:100%">
             </div>
             <div id="peças-cont"></div>
         </div>
+        <div id="list-l" style="display:none"><div id="battle-logs"></div></div>
         <div id="list-a" style="display:none">
             <div class="unit-card">
-                <b>MIXER VOLUME</b><br>
-                BGM: <input type="range" id="v-m" min="0" max="1" step="0.1" value="0.5" oninput="vols()" style="width:100%">
-                SFX: <input type="range" id="v-e" min="0" max="1" step="0.1" value="0.8" oninput="vols()" style="width:100%">
+                <b>MIXER</b><br><br>
+                BGM: <input type="range" id="v-bgm" min="0" max="1" step="0.1" value="0.5" oninput="vols()" style="width:100%"><br>
+                SFX: <input type="range" id="v-sfx" min="0" max="1" step="0.1" value="0.7" oninput="vols()" style="width:100%"><br>
+                HINOS: <input type="range" id="v-win" min="0" max="1" step="0.1" value="0.8" oninput="vols()" style="width:100%">
             </div>
-            <div class="unit-card"><b>MÚSICA DE FUNDO</b><input type="file" onchange="upGlobal(this)" style="width:100%"></div>
+            <div class="unit-card"><b>BGM GLOBAL</b><input type="file" onchange="upGlobal(this)" style="width:100%"></div>
         </div>
     </div>
-    <button class="btn btn-yes" onclick="document.getElementById('m-starter').style.display='flex'">SALVAR E INICIAR</button>
+    <button class="btn btn-yes" onclick="document.getElementById('m-starter').style.display='flex'">INICIAR</button>
 </aside>
 
-<main>
-    <div id="board"></div>
+<main id="game-scene">
+    <div id="board-wrapper">
+        <div id="board"></div>
+    </div>
     <div id="command-deck">
-        <div class="commander-slot"><div id="mini-B" class="avatar-frame"></div><div id="s-b" class="score-box">0</div></div>
+        <div id="mini-B" class="avatar-frame"></div>
+        <div id="s-b" style="font-size:24px; font-weight:900">0</div>
         <div style="font-weight:900; color:#333">VS</div>
-        <div class="commander-slot"><div id="mini-P" class="avatar-frame" style="border-color: #500;"></div><div id="s-p" class="score-box" style="color:var(--danger)">0</div></div>
+        <div id="mini-P" class="avatar-frame"></div>
+        <div id="s-p" style="font-size:24px; font-weight:900; color:var(--danger)">0</div>
     </div>
 </main>
 
-<div id="m-victory" class="overlay"><div class="modal"><h1>PARABÉNS!</h1><div id="win-photo" style="width:150px; height:150px; border-radius:50%; border:5px solid var(--accent); margin:20px auto; background-size:cover; background-position:center;"></div><h2 id="win-name"></h2><button class="btn btn-yes" onclick="resetGame()">REINICIAR</button></div></div>
-<div id="m-starter" class="overlay"><div class="modal"><h2>QUEM COMEÇA?</h2><button class="btn btn-yes" onclick="boot('B')">BRANCAS</button><button class="btn btn-atk" onclick="boot('P')">PRETAS</button></div></div>
-<div id="m-ask-battle" class="overlay"><div class="modal"><h2 style="color:var(--danger)">CONFLITO!</h2><button class="btn btn-atk" onclick="startArena()">ARENA</button><button class="btn btn-no" onclick="cancelBattle()" style="background:#222; color:#fff">RECUAR</button></div></div>
-<div id="m-confirm-move" class="overlay"><div class="modal"><h2>CONFIRMAR?</h2><button class="btn btn-yes" onclick="confirmMove(true)">SIM</button><button class="btn btn-no" onclick="confirmMove(false)" style="background:#222; color:#fff">CANCELAR</button></div></div>
-
 <div id="arena" class="overlay" style="flex-direction:column">
-    <h2 id="timer" style="font-size:60px; font-family:monospace">01:00</h2>
-    <div style="display:flex; gap:20px; margin:30px 0">
-        <div style="position:relative"><div id="a-img" style="width:140px; height:200px; border:3px solid var(--accent); background-size:contain; background-repeat:no-repeat; background-position:center; background-color:#111;"></div><button onclick="playSnd('atk')" style="position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); border-radius:50%; width:35px; height:35px; border:none; cursor:pointer">▶</button></div>
-        <div style="position:relative"><div id="d-img" style="width:140px; height:200px; border:3px solid var(--danger); background-size:contain; background-repeat:no-repeat; background-position:center; background-color:#111;"></div><button onclick="playSnd('def')" style="position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); border-radius:50%; width:35px; height:35px; border:none; cursor:pointer">▶</button></div>
+    <div style="display:flex; gap:30px; align-items:center">
+        <div id="a-box" style="text-align:center">
+            <div id="a-img" style="width:150px; height:200px; border:4px solid var(--accent); background-size:contain; background-repeat:no-repeat; background-color:#111"></div>
+            <button class="btn" onclick="playSfx('atk')" style="background:#222; font-size:10px">PLAY SOM</button>
+        </div>
+        <h1 style="font-size:40px">⚔️</h1>
+        <div id="d-box" style="text-align:center">
+            <div id="d-img" style="width:150px; height:200px; border:4px solid var(--danger); background-size:contain; background-repeat:no-repeat; background-color:#111"></div>
+            <button class="btn" onclick="playSfx('def')" style="background:#222; font-size:10px">PLAY SOM</button>
+        </div>
     </div>
-    <button class="btn btn-yes" style="width:280px" onclick="finishDuel(true)">VITÓRIA</button>
-    <button class="btn btn-atk" style="width:280px; background:#222" onclick="finishDuel(false)">RECUAR</button>
+    <button class="btn btn-yes" style="width:280px; margin-top:30px" onclick="finishDuel(true)">VITÓRIA</button>
 </div>
 
+<div id="m-confirm-move" class="overlay"><div class="modal"><h2>MARCHAR?</h2><button class="btn btn-yes" onclick="confirmMove(true)">SIM</button><button class="btn" onclick="confirmMove(false)" style="background:#222">NÃO</button></div></div>
+<div id="m-starter" class="overlay"><div class="modal"><h2>QUEM COMEÇA?</h2><button class="btn btn-yes" onclick="boot('B')">BRANCAS</button><button class="btn btn-atk" onclick="boot('P')">PRETAS</button></div></div>
+<div id="m-victory" class="overlay"><div class="modal"><h1>VENCEDOR!</h1><div id="win-photo" style="width:100px; height:100px; border-radius:50%; margin:15px auto; background-size:cover; border:3px solid var(--accent)"></div><h2 id="win-name"></h2><button class="btn btn-yes" onclick="location.reload()">REINICIAR</button></div></div>
+
 <script>
-    let db, store = { p: {}, g: {killsB: 0, killsP: 0, avatarB: '', avatarP: '', hinoB: '', hinoP: '', bgm: ''} };
-    const req = indexedDB.open("WarFinal_v28_9", 1);
+    let db, store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:'', hinoB:'', hinoP:'', bgm:'', volBGM:0.5, volSFX:0.7, volWin:0.8}, logs: [] };
+    const req = indexedDB.open("WarAbsolute_v29_7", 1);
     req.onupgradeneeded = e => e.target.result.createObjectStore("assets");
     req.onsuccess = e => { db = e.target.result; loadData(); };
 
-    let isLive = false, turn = 'B', sel = null, pending = null, currentTeam = 'B', timerInt, timeLeft = 60;
+    let isLive = false, turn = 'B', sel = null, pending = null, currentTeam = 'B';
+    let audioBGM = new Audio(), audioWin = new Audio(), audioSFX = new Audio(); audioBGM.loop = true;
+
     const initialLayout = ['T1_P','C1_P','B1_P','Q1_P','K1_P','B2_P','C2_P','T2_P','P1_P','P2_P','P3_P','P4_P','P5_P','P6_P','P7_P','P8_P',...Array(32).fill(null),'P1_B','P2_B','P3_B','P4_B','P5_B','P6_B','P7_B','P8_B','T1_B','C1_B','B1_B','Q1_B','K1_B','B2_B','C2_B','T2_B'];
     let board = [...initialLayout];
-    let audioMenu = new Audio(), audioAtk = new Audio(), audioDef = new Audio(), audioWin = new Audio();
-    audioMenu.loop = true;
 
     function loadData() {
         db.transaction("assets").objectStore("assets").get("all").onsuccess = e => {
             if(e.target.result) store = e.target.result;
-            if(store.g.bgm) audioMenu.src = store.g.bgm;
-            updateUI(); changeTeam('B'); renderBoard();
+            if(store.g.bgm) audioBGM.src = store.g.bgm;
+            vols(); updateUI(); changeTeam('B'); renderBoard();
         };
     }
 
-    function changeTeam(t) {
-        currentTeam = t;
-        const label = document.getElementById('avatar-title'), preview = document.getElementById('side-preview'), hino = document.querySelector('#hino-status span');
-        const btnB = document.getElementById('btn-B'), btnP = document.getElementById('btn-P');
+    function getCoord(i) { return ['A','B','C','D','E','F','G','H'][i%8] + (8 - Math.floor(i/8)); }
+    function addLog(msg) { store.logs.unshift(`[${new Date().toLocaleTimeString()}] ${msg}`); document.getElementById('battle-logs').innerHTML = store.logs.map(l => `<div class="log-entry">${l}</div>`).join(''); }
 
-        if(t === 'B') {
-            label.innerText = "AVATAR: COMANDANTE BRANCAS"; label.style.color = "#fff";
-            preview.style.backgroundImage = `url(${store.g.avatarB || ''})`;
-            hino.innerText = store.g.hinoB ? "✅ Carregado" : "Aguardando...";
-            btnB.style.background = "#333"; btnP.style.background = "#000";
-        } else {
-            label.innerText = "AVATAR: COMANDANTE PRETAS"; label.style.color = "var(--danger)";
-            preview.style.backgroundImage = `url(${store.g.avatarP || ''})`;
-            hino.innerText = store.g.hinoP ? "✅ Carregado" : "Aguardando...";
-            btnP.style.background = "#333"; btnB.style.background = "#000";
-        }
-        renderList(); updateUI();
-    }
-
-    function renderList() {
-        const container = document.getElementById('peças-cont'); container.innerHTML = '';
-        const types = ['T1','C1','B1','Q1','K1','B2','C2','T2','P1','P2','P3','P4','P5','P6','P7','P8'];
-        types.forEach(t => {
-            const id = `${t}_${currentTeam}`;
-            if(!store.p[id]) store.p[id] = { img: '', snd: '' };
-            const hasImg = store.p[id].img !== '';
-            const hasSnd = store.p[id].snd !== '';
-            
-            const d = document.createElement('div'); d.className = 'unit-card';
-            d.innerHTML = `
-                <span class="status-badge ${hasImg?'loaded':''}" style="margin-left:5px">${hasImg?'🖼️ OK':''}</span>
-                <span class="status-badge ${hasSnd?'loaded':''}" style="margin-right:5px">${hasSnd?'🔊 OK':''}</span>
-                <b style="font-size:12px">${id}</b>
-                <div style="display:flex; align-items:center; gap:8px; margin-top:8px">
-                    <div style="width:30px; height:30px; background-image:url(${store.p[id].img}); background-size:cover; border:1px solid #444; border-radius:4px"></div>
-                    <input type="file" onchange="upP('${id}','img',this)" style="font-size:9px; flex:1">
-                </div>
-                <input type="file" onchange="upP('${id}','snd',this)" style="font-size:9px; width:100%; margin-top:5px">
-            `;
-            container.appendChild(d);
-        });
-    }
-
-    function upAvatar(i) {
-        const r = new FileReader();
-        r.onload = e => {
-            if(currentTeam === 'B') store.g.avatarB = e.target.result; else store.g.avatarP = e.target.result;
-            document.getElementById('side-preview').style.backgroundImage = `url(${e.target.result})`;
-            save(); updateUI();
-        };
-        r.readAsDataURL(i.files[0]);
-    }
-
-    function upHino(i) { const r = new FileReader(); r.onload = e => { if(currentTeam === 'B') store.g.hinoB = e.target.result; else store.g.hinoP = e.target.result; save(); changeTeam(currentTeam); }; r.readAsDataURL(i.files[0]); }
-    function upP(id, ty, i) { const r = new FileReader(); r.onload = e => { store.p[id][ty] = e.target.result; save(); renderList(); renderBoard(); }; r.readAsDataURL(i.files[0]); }
-    function upGlobal(i) { const r = new FileReader(); r.onload = e => { store.g.bgm = e.target.result; audioMenu.src = e.target.result; save(); }; r.readAsDataURL(i.files[0]); }
-    
-    function updateUI() {
-        document.getElementById('s-b').innerText = store.g.killsB; document.getElementById('s-p').innerText = store.g.killsP;
-        document.getElementById('mini-B').style.backgroundImage = `url(${store.g.avatarB})`; document.getElementById('mini-P').style.backgroundImage = `url(${store.g.avatarP})`;
-        document.getElementById('mini-B').className = 'avatar-frame' + (turn === 'B' && isLive ? ' turn-active-B' : '');
-        document.getElementById('mini-P').className = 'avatar-frame' + (turn === 'P' && isLive ? ' turn-active-P' : '');
+    function vols() {
+        audioBGM.volume = document.getElementById('v-bgm').value;
+        audioWin.volume = document.getElementById('v-win').value;
+        audioSFX.volume = document.getElementById('v-sfx').value;
     }
 
     function renderBoard() {
         const b = document.getElementById('board'); b.innerHTML = '';
+        const isEdit = document.getElementById('edit-mode').checked;
+        const letras = ['A','B','C','D','E','F','G','H'];
+
         board.forEach((id, i) => {
             const sq = document.createElement('div'); sq.className = `sq ${(Math.floor(i/8)+i%8)%2==0?'l':'d'}`;
             sq.onclick = () => handleSq(i);
+            if(i%8===0){ let v=document.createElement('div'); v.className='coord-v'; v.innerText=8-Math.floor(i/8); sq.appendChild(v); }
+            if(Math.floor(i/8)===7){ let h=document.createElement('div'); h.className='coord-h'; h.innerText=letras[i%8]; sq.appendChild(h); }
+
             if(id) {
+                const cont = document.createElement('div'); cont.className = 'piece-container';
                 const p = document.createElement('div'); p.className = 'piece';
                 if(store.p[id]?.img) p.style.backgroundImage = `url(${store.p[id].img})`;
                 else p.style.backgroundColor = id.endsWith('_B') ? '#fff' : '#f05';
-                sq.appendChild(p);
+                cont.appendChild(p);
+                if(isEdit) {
+                    const x = document.createElement('div'); x.className='btn-remove'; x.innerText='×';
+                    x.onclick=(e)=>{ e.stopPropagation(); board[i]=null; renderBoard(); };
+                    cont.appendChild(x);
+                }
+                sq.appendChild(cont);
             }
             b.appendChild(sq);
         });
@@ -218,24 +194,90 @@
             if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.boxShadow = "inset 0 0 20px var(--accent)"; }
         } else {
             if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.boxShadow = "inset 0 0 20px var(--accent)"; }
-            else if(board[i]) { pending = {f:sel, t:i}; document.getElementById('m-ask-battle').style.display = 'flex'; }
+            else if(board[i]) { pending = {f:sel, t:i}; document.getElementById('arena').style.display = 'flex'; updateArena(); }
             else { pending = {f:sel, t:i}; document.getElementById('m-confirm-move').style.display = 'flex'; }
         }
     }
 
-    function confirmMove(ok) { document.getElementById('m-confirm-move').style.display = 'none'; if(ok) { board[pending.t] = board[pending.f]; board[pending.f] = null; turn = turn === 'B' ? 'P' : 'B'; } sel = null; renderBoard(); updateUI(); }
-    function finishDuel(win) { clearInterval(timerInt); document.getElementById('arena').style.display = 'none'; if(win) { if(turn === 'B') store.g.killsB++; else store.g.killsP++; board[pending.t] = board[pending.f]; board[pending.f] = null; turn = turn === 'B' ? 'P' : 'B'; save(); updateUI(); } sel = null; renderBoard(); checkVictory(); }
-    function checkVictory() { const hasB = board.some(p => p?.endsWith('_B')), hasP = board.some(p => p?.endsWith('_P')); if(!hasB || !hasP) { const winner = hasB ? 'B' : 'P'; audioMenu.pause(); if(store.g['hino'+winner]) { audioWin.src = store.g['hino'+winner]; audioWin.play(); } document.getElementById('win-name').innerText = (winner==='B'?'BRANCAS':'PRETAS') + " VENCERAM!"; document.getElementById('win-photo').style.backgroundImage = `url(${store.g['avatar'+winner]})`; document.getElementById('m-victory').style.display = 'flex'; spawnConfetti(); isLive = false; } }
-    function spawnConfetti() { for(let i=0; i<80; i++) { const c = document.createElement('div'); c.className = 'confetti'; c.style.left = Math.random() * 100 + 'vw'; c.style.backgroundColor = ['#00e5ff','#ff0055','#fff'][Math.floor(Math.random()*3)]; c.style.animationDuration = (Math.random() * 3 + 2) + 's'; c.style.top = '-10px'; document.body.appendChild(c); setTimeout(() => c.remove(), 5000); } }
-    function startArena() { document.getElementById('m-ask-battle').style.display = 'none'; document.getElementById('a-img').style.backgroundImage = `url(${store.p[board[pending.f]]?.img || ''})`; document.getElementById('d-img').style.backgroundImage = `url(${store.p[board[pending.t]]?.img || ''})`; document.getElementById('arena').style.display = 'flex'; timeLeft = 60; timerInt = setInterval(() => { timeLeft--; document.getElementById('timer').innerText = `00:${timeLeft<10?'0'+timeLeft:timeLeft}`; if(timeLeft<=0) finishDuel(false); }, 1000); }
+    function updateArena() {
+        document.getElementById('a-img').style.backgroundImage = `url(${store.p[board[pending.f]]?.img || ''})`;
+        document.getElementById('d-img').style.backgroundImage = `url(${store.p[board[pending.t]]?.img || ''})`;
+    }
+
+    function playSfx(role) {
+        const id = role === 'atk' ? board[pending.f] : board[pending.t];
+        const img = role === 'atk' ? document.getElementById('a-img') : document.getElementById('d-img');
+        const anim = role === 'atk' ? 'anim-atk' : 'anim-def';
+        if(store.p[id]?.snd) { audioSFX.src = store.p[id].snd; audioSFX.play(); }
+        img.classList.remove(anim); void img.offsetWidth; img.classList.add(anim);
+    }
+
+    function confirmMove(ok) {
+        document.getElementById('m-confirm-move').style.display = 'none';
+        if(ok) { addLog(`${turn} -> ${getCoord(pending.t)}`); board[pending.t] = board[pending.f]; board[pending.f] = null; turn = turn === 'B' ? 'P' : 'B'; }
+        sel = null; renderBoard(); updateUI();
+    }
+
+    function finishDuel(win) {
+        document.getElementById('arena').style.display = 'none';
+        if(win) { 
+            document.getElementById('game-scene').classList.add('shake'); setTimeout(()=>document.getElementById('game-scene').classList.remove('shake'),300);
+            if(turn === 'B') store.g.killsB++; else store.g.killsP++;
+            addLog(`ABATE em ${getCoord(pending.t)}`);
+            board[pending.t] = board[pending.f]; board[pending.f] = null; turn = turn === 'B' ? 'P' : 'B'; 
+        }
+        sel = null; renderBoard(); updateUI(); checkVictory();
+    }
+
+    function checkVictory() {
+        const b = board.some(p => p?.endsWith('_B')), p = board.some(p => p?.endsWith('_P'));
+        if(!b || !p) {
+            const w = b ? 'B' : 'P'; audioBGM.pause();
+            if(store.g['hino'+w]) { audioWin.src = store.g['hino'+w]; audioWin.play(); }
+            document.getElementById('win-name').innerText = w==='B'?'BRANCAS VENCERAM':'PRETAS VENCERAM';
+            document.getElementById('win-photo').style.backgroundImage = `url(${store.g['avatar'+w]})`;
+            document.getElementById('m-victory').style.display = 'flex'; isLive = false;
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('s-b').innerText = store.g.killsB;
+        document.getElementById('s-p').innerText = store.g.killsP;
+        document.getElementById('mini-B').style.backgroundImage = `url(${store.g.avatarB})`;
+        document.getElementById('mini-P').style.backgroundImage = `url(${store.g.avatarP})`;
+        document.getElementById('mini-B').className = 'avatar-frame' + (turn==='B' && isLive ? ' turn-active-B' : '');
+        document.getElementById('mini-P').className = 'avatar-frame' + (turn==='P' && isLive ? ' turn-active-P' : '');
+    }
+
+    function changeTeam(t) {
+        currentTeam = t;
+        document.getElementById('avatar-title').innerText = `COMANDANTE: ${t==='B'?'BRANCAS':'PRETAS'}`;
+        renderList();
+    }
+
+    function renderList() {
+        const cont = document.getElementById('peças-cont'); cont.innerHTML = '';
+        const types = ['T1','C1','B1','Q1','K1','B2','C2','T2','P1','P2','P3','P4','P5','P6','P7','P8'];
+        types.forEach(t => {
+            const id = `${t}_${currentTeam}`;
+            if(!store.p[id]) store.p[id] = { img: '', snd: '' };
+            const d = document.createElement('div'); d.className = 'unit-card';
+            d.innerHTML = `<b>${id}</b><br>
+                IMG: <input type="file" onchange="upFile('${id}','img',this)" style="font-size:10px; width:100%"><br>
+                SOM: <input type="file" onchange="upFile('${id}','snd',this)" style="font-size:10px; width:100%">`;
+            cont.appendChild(d);
+        });
+    }
+
+    function upFile(id, ty, i) { const r = new FileReader(); r.onload = e => { store.p[id][ty] = e.target.result; save(); renderList(); renderBoard(); }; r.readAsDataURL(i.files[0]); }
+    function upAvatar(i) { const r = new FileReader(); r.onload = e => { if(currentTeam === 'B') store.g.avatarB = e.target.result; else store.g.avatarP = e.target.result; save(); updateUI(); }; r.readAsDataURL(i.files[0]); }
+    function upHino(i) { const r = new FileReader(); r.onload = e => { if(currentTeam === 'B') store.g.hinoB = e.target.result; else store.g.hinoP = e.target.result; save(); }; r.readAsDataURL(i.files[0]); }
+    function upGlobal(i) { const r = new FileReader(); r.onload = e => { store.g.bgm = e.target.result; audioBGM.src = e.target.result; save(); }; r.readAsDataURL(i.files[0]); }
     function save() { db.transaction("assets","readwrite").objectStore("assets").put(store,"all"); }
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
-    function switchTab(t) { document.getElementById('list-u').style.display = t==='u'?'block':'none'; document.getElementById('list-a').style.display = t==='a'?'block':'none'; document.getElementById('tab-u').className = t==='u'?'active':''; document.getElementById('tab-a').className = t==='a'?'active':''; }
-    function boot(team) { isLive = true; turn = team; document.getElementById('m-starter').style.display='none'; if(audioMenu.src) audioMenu.play(); toggleMenu(); renderBoard(); updateUI(); }
-    function resetGame() { board = [...initialLayout]; store.g.killsB = 0; store.g.killsP = 0; audioWin.pause(); save(); updateUI(); renderBoard(); document.getElementById('m-victory').style.display = 'none'; isLive = false; }
-    function cancelBattle() { document.getElementById('m-ask-battle').style.display = 'none'; sel = null; renderBoard(); }
-    function vols() { audioMenu.volume = document.getElementById('v-m').value; audioAtk.volume = audioDef.volume = audioWin.volume = document.getElementById('v-e').value; }
-    function playSnd(role) { const id = role === 'atk' ? board[pending.f] : board[pending.t]; const p = role === 'atk' ? audioAtk : audioDef; if(store.p[id]?.snd) { p.src = store.p[id].snd; p.play(); } }
+    function switchTab(t) { document.getElementById('list-u').style.display = t==='u'?'block':'none'; document.getElementById('list-l').style.display = t==='l'?'block':'none'; document.getElementById('list-a').style.display = t==='a'?'block':'none'; document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active')); document.getElementById('tab-'+t).classList.add('active'); }
+    function boot(team) { isLive = true; turn = team; document.getElementById('m-starter').style.display='none'; if(audioBGM.src) audioBGM.play(); toggleMenu(); updateUI(); }
+
     renderBoard();
 </script>
 </body>
