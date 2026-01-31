@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>War Engine v6.0 - Pro Series</title>
+    <style>
+        :root { 
+            --bg: #08080a; --panel: #121216; --accent: #00e5ff; --accent-glow: rgba(0, 229, 255, 0.4);
+            --sq-l: #2c2c34; --sq-d: #1a1a1f; --white: #ffffff; --black: #ff0055;
+        }
+        
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; color: white; }
+        #app { display: flex; height: 100vh; width: 100vw; flex-direction: row; }
+
+        @media (max-width: 900px) {
+            #app { flex-direction: column; }
+            aside { width: 100% !important; height: 45% !important; border-left: none !important; border-top: 2px solid #333; order: 2; }
+            main { height: 55% !important; order: 1; }
+            #board { width: 88vw !important; height: 88vw !important; }
+        }
+
+        /* Sidebar HUD */
+        aside { width: 380px; background: var(--panel); padding: 15px; display: flex; flex-direction: column; border-right: 1px solid #333; box-sizing: border-box; }
+        .logo-header { text-align: center; font-weight: 900; letter-spacing: 2px; color: var(--accent); margin-bottom: 15px; text-shadow: 0 0 10px var(--accent-glow); }
+        
+        #war-log { flex: 1; background: #050505; border: 1px solid #222; margin: 10px 0; padding: 10px; font-family: 'Consolas', monospace; font-size: 11px; overflow-y: auto; color: #00ff41; }
+
+        .tabs { display: flex; gap: 2px; }
+        .tab-btn { flex: 1; padding: 10px; font-size: 10px; background: #222; border: 1px solid #333; color: #888; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background: var(--accent); color: #000; font-weight: bold; }
+
+        .tab-content { display: none; overflow-y: auto; flex: 1; padding: 10px 0; }
+        .tab-content.active { display: block; }
+
+        .p-card { background: #1a1a20; padding: 10px; border-radius: 4px; margin-bottom: 8px; border-left: 3px solid var(--accent); }
+        .p-card label { font-size: 10px; color: #aaa; display: block; margin-bottom: 5px; }
+
+        /* Game Area */
+        main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle, #1a1a24 0%, #08080a 100%); }
+        .hud-top { width: 90%; max-width: 500px; display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; font-size: 12px; }
+
+        #board { 
+            display: grid; grid-template-columns: repeat(8, 1fr); 
+            width: 75vh; height: 75vh; max-width: 520px; max-height: 520px; 
+            border: 12px solid #111; box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        .square { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; }
+        .l { background: var(--sq-l); } .d { background: var(--sq-d); }
+        .selected { background: rgba(0, 229, 255, 0.3) !important; box-shadow: inset 0 0 15px var(--accent); }
+        .last-move { background: rgba(255, 255, 255, 0.1) !important; }
+
+        .piece { 
+            width: 90%; height: 90%; background-size: contain; background-repeat: no-repeat; background-position: center; 
+            cursor: pointer; transition: transform 0.1s; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
+        }
+        .piece:active { transform: scale(1.1); }
+
+        .btn-action { background: var(--accent); color: #000; border: none; padding: 15px; font-weight: 900; cursor: pointer; width: 100%; border-radius: 4px; margin-top: 5px; }
+        
+        #victory-overlay { 
+            display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.9); 
+            z-index: 9999; flex-direction: column; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="victory-overlay">
+    <h1 id="win-msg" style="color:var(--accent); font-size: 3rem;">OPERACIONAL</h1>
+    <button class="btn-action" style="width: 200px" onclick="location.reload()">REINICIAR</button>
+</div>
+
+<div id="app">
+    <aside>
+        <div class="logo-header">WAR ENGINE PRO v6.0</div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('tab-w')">TIME W</button>
+            <button class="tab-btn" onclick="switchTab('tab-b')">TIME B</button>
+            <button class="tab-btn" onclick="switchTab('tab-config')">SISTEMA</button>
+        </div>
+
+        <div id="tab-w" class="tab-content active"></div>
+        <div id="tab-b" class="tab-content"></div>
+        <div id="tab-config" class="tab-content">
+            <div class="p-card">
+                <label>🎵 TRILHA SONORA FIXA</label>
+                <input type="file" accept="audio/*" onchange="storeGlobal('bgm', this)">
+                <input type="range" id="vol-control" min="0" max="1" step="0.1" value="0.5" style="width:100%; margin-top:10px">
+            </div>
+            <div class="p-card">
+                <label>🔥 EFEITO DE EXPLOSÃO (SOM)</label>
+                <input type="file" accept="audio/*" onchange="storeGlobal('sfx', this)">
+            </div>
+            <button class="btn-action" style="background:#444; color:white; font-size:10px" onclick="clearAllData()">RESETAR BANCO DE DADOS</button>
+        </div>
+
+        <div id="war-log"></div>
+        <button class="btn-action" onclick="initGameEngine()">ATIVAR SISTEMA</button>
+    </aside>
+
+    <main>
+        <div class="hud-top">
+            <div id="status-turn">STATUS: AGUARDANDO...</div>
+            <div id="status-score">W: 0 | B: 0</div>
+        </div>
+        <div id="board"></div>
+    </main>
+</div>
+
+<script>
+    // --- DATABASE MANAGER (IndexedDB para fotos pesadas) ---
+    const DB_NAME = "WarChessProDB";
+    let db, storage = { pieces: {}, global: {} };
+    const request = indexedDB.open(DB_NAME, 1);
+    
+    request.onupgradeneeded = e => e.target.result.createObjectStore("assets");
+    request.onsuccess = e => { db = e.target.result; loadSavedAssets(); };
+
+    // --- GAME STATE ---
+    let engineActive = false;
+    let currentTurn = 'B'; // B = Branco (Baixo), P = Preto (Cima)
+    let selectedCell = null;
+    let score = { W: 0, B: 0 };
+    let bgmPlayer = new Audio(); bgmPlayer.loop = true;
+    let sfxPlayer = new Audio();
+
+    const layout = [
+        'T1_P','C1_P','B1_P','Q_P','K_P','B2_P','C2_P','T2_P',
+        'P1_P','P2_P','P3_P','P4_P','P5_P','P6_P','P7_P','P8_P',
+        ...Array(32).fill(null),
+        'P1_B','P2_B','P3_B','P4_B','P5_B','P6_B','P7_B','P8_B',
+        'T1_B','C1_B','B1_B','Q_B','K_B','B2_B','C2_B','T2_B'
+    ];
+    let boardState = [...layout];
+
+    function loadSavedAssets() {
+        db.transaction("assets", "readonly").objectStore("assets").get("data").onsuccess = e => {
+            if(e.target.result) {
+                storage = e.target.result;
+                if(storage.global.bgm) bgmPlayer.src = storage.global.bgm;
+                if(storage.global.sfx) sfxPlayer.src = storage.global.sfx;
+            }
+            buildUI();
+        };
+    }
+
+    function buildUI() {
+        layout.forEach(id => {
+            if(!id) return;
+            const tab = document.getElementById(id.endsWith('_B') ? 'tab-w' : 'tab-b');
+            if(!storage.pieces[id]) storage.pieces[id] = { img: '', snd: '' };
+            
+            const card = document.createElement('div');
+            card.className = 'p-card';
+            card.innerHTML = `<label>${id.replace('_',' ')}</label>
+                <input type="file" accept="image/*" onchange="saveAsset('${id}', 'img', this)">
+                <input type="file" accept="audio/*" onchange="saveAsset('${id}', 'snd', this)">`;
+            tab.appendChild(card);
+        });
+        drawBoard();
+    }
+
+    async function saveAsset(id, type, input) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            storage.pieces[id][type] = e.target.result;
+            db.transaction("assets", "readwrite").objectStore("assets").put(storage, "data");
+            drawBoard();
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    async function storeGlobal(type, input) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            storage.global[type] = e.target.result;
+            db.transaction("assets", "readwrite").objectStore("assets").put(storage, "data");
+            if(type === 'bgm') { bgmPlayer.src = e.target.result; bgmPlayer.play(); }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    function drawBoard() {
+        const board = document.getElementById('board');
+        board.innerHTML = '';
+        boardState.forEach((id, i) => {
+            const sq = document.createElement('div');
+            sq.className = `square ${(Math.floor(i/8)+i%8)%2==0?'l':'d'}`;
+            sq.onclick = () => onCellClick(i);
+            if(id) {
+                const p = document.createElement('div');
+                p.className = 'piece';
+                if(storage.pieces[id]?.img) p.style.backgroundImage = `url(${storage.pieces[id].img})`;
+                else p.style.backgroundColor = id.endsWith('_B') ? '#fff' : '#ff0055';
+                sq.appendChild(p);
+            }
+            board.appendChild(sq);
+        });
+    }
+
+    function onCellClick(i) {
+        if(!engineActive) return;
+        const piece = boardState[i];
+
+        if(selectedCell === null) {
+            if(piece && piece.endsWith('_' + currentTurn)) {
+                selectedCell = i;
+                drawBoard();
+                document.getElementById('board').children[i].classList.add('selected');
+            }
+        } else {
+            if(piece && piece.endsWith('_' + currentTurn)) {
+                selectedCell = i;
+                drawBoard();
+                document.getElementById('board').children[i].classList.add('selected');
+            } else {
+                executeMove(selectedCell, i);
+                selectedCell = null;
+            }
+        }
+    }
+
+    function executeMove(from, to) {
+        const attacker = boardState[from];
+        const victim = boardState[to];
+
+        if(victim) {
+            if(sfxPlayer.src) sfxPlayer.play();
+            victim.endsWith('_B') ? score.B++ : score.W++;
+            logEvent(`CAPTURADO: ${attacker} abateu ${victim}`);
+        }
+
+        if(storage.pieces[attacker]?.snd) new Audio(storage.pieces[attacker].snd).play();
+
+        boardState[to] = attacker;
+        boardState[from] = null;
+        currentTurn = currentTurn === 'B' ? 'P' : 'B';
+        
+        updateHUD();
+        drawBoard();
+        if(score.W === 16 || score.B === 16) endGame(score.W === 16 ? "PRETO" : "BRANCO");
+    }
+
+    function updateHUD() {
+        document.getElementById('status-turn').innerText = `TURNO: ${currentTurn === 'B' ? 'TIME BRANCO' : 'TIME PRETO'}`;
+        document.getElementById('status-score').innerText = `W: ${score.W} | B: ${score.B}`;
+    }
+
+    function logEvent(msg) {
+        const log = document.getElementById('war-log');
+        const entry = document.createElement('div');
+        entry.innerText = `> ${msg}`;
+        log.prepend(entry);
+    }
+
+    function initGameEngine() { engineActive = true; if(bgmPlayer.src) bgmPlayer.play(); logEvent("ENGINE PRO INICIALIZADA"); updateHUD(); }
+    function switchTab(id) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+    document.getElementById('vol-control').oninput = e => bgmPlayer.volume = e.target.value;
+    function clearAllData() { if(confirm("Deseja apagar todas as fotos e sons salvos?")) { indexedDB.deleteDatabase(DB_NAME); location.reload(); } }
+    function endGame(team) { document.getElementById('win-msg').innerText = `VITÓRIA: ${team}`; document.getElementById('victory-overlay').style.display = 'flex'; }
+</script>
+</body>
+</html>
