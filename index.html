@@ -3,133 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>War Engine v6.1 - Mobile Fix</title>
+    <title>War Engine v7.0 - Ultra Adaptive</title>
     <style>
         :root { 
-            --bg: #08080a; --panel: #121216; --accent: #00e5ff; --accent-glow: rgba(0, 229, 255, 0.4);
-            --sq-l: #2c2c34; --sq-d: #1a1a1f;
+            --bg: #050505; --panel: #111115; --accent: #00e5ff; 
+            --sq-l: #2a2a30; --sq-d: #15151a;
         }
         
-        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); font-family: system-ui, -apple-system, sans-serif; overflow: hidden; color: white; }
+        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); font-family: sans-serif; overflow: hidden; color: white; }
+        
         #app { display: flex; height: 100vh; width: 100vw; flex-direction: row; }
 
-        /* AJUSTE MOBILE CRÍTICO */
+        /* Ajuste Mobile de Alta Performance */
         @media (max-width: 900px) {
             #app { flex-direction: column; }
             aside { 
                 width: 100% !important; 
-                height: 40% !important; 
-                order: 2; 
-                padding: 10px !important;
+                height: 45vh !important; 
+                border-left: none !important; 
                 border-top: 2px solid var(--accent);
+                position: relative;
+                z-index: 100;
             }
-            main { height: 60% !important; order: 1; overflow: hidden; }
-            #board { width: 85vw !important; height: 85vw !important; max-width: 350px; max-height: 350px; }
-            .btn-action-main { position: sticky; bottom: 0; left: 0; z-index: 100; margin-top: 0 !important; }
+            main { flex: 1; height: 55vh !important; }
+            #board { 
+                width: 85vw !important; 
+                height: 85vw !important; 
+                max-width: 40vh; /* Garante que não empurre o menu */
+                max-height: 40vh;
+            }
+            .p-card { padding: 5px !important; }
+            .p-card label { font-size: 7px !important; }
         }
 
+        /* Sidebar com Scroll Interno */
         aside { 
             width: 380px; 
             background: var(--panel); 
             display: flex; 
             flex-direction: column; 
-            border-right: 1px solid #333; 
-            box-sizing: border-box;
-            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
 
-        .menu-content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 80px; }
+        .scroll-area { flex: 1; overflow-y: auto; padding: 15px; }
 
-        .logo-header { text-align: center; font-weight: 900; color: var(--accent); margin-bottom: 15px; font-size: 14px; }
-        
-        #war-log { background: #000; border: 1px solid #222; margin: 10px 0; padding: 10px; font-family: monospace; font-size: 10px; color: #00ff41; height: 80px; overflow-y: auto; }
-
-        .tabs { display: flex; gap: 2px; position: sticky; top: 0; background: var(--panel); z-index: 5; padding-bottom: 5px; }
-        .tab-btn { flex: 1; padding: 12px 5px; font-size: 9px; background: #222; border: 1px solid #333; color: #888; cursor: pointer; }
+        .tabs { display: flex; gap: 2px; position: sticky; top: 0; background: var(--panel); z-index: 10; padding-bottom: 10px; }
+        .tab-btn { flex: 1; padding: 10px 2px; font-size: 9px; background: #222; border: none; color: #777; cursor: pointer; border-radius: 3px; }
         .tab-btn.active { background: var(--accent); color: #000; font-weight: bold; }
 
         .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tab-content.active { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-        .p-card { background: #1a1a20; padding: 8px; border-radius: 4px; margin-bottom: 6px; border-left: 3px solid var(--accent); }
-        .p-card label { font-size: 9px; color: #aaa; display: block; margin-bottom: 4px; }
-        input[type="file"] { font-size: 10px; width: 100%; }
+        .p-card { background: #1a1a22; padding: 10px; border-radius: 5px; border-bottom: 2px solid #333; }
+        .p-card label { font-size: 9px; color: var(--accent); display: block; margin-bottom: 4px; font-weight: bold; }
+        input[type="file"] { font-size: 8px; width: 100%; color: #666; }
 
-        main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000; }
+        /* Estética do Jogo */
+        main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #08080a; }
         
         #board { 
             display: grid; grid-template-columns: repeat(8, 1fr); 
             width: 70vh; height: 70vh; max-width: 500px; max-height: 500px; 
-            border: 5px solid #111; 
+            border: 8px solid #000; outline: 1px solid #333;
         }
 
         .square { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
         .l { background: var(--sq-l); } .d { background: var(--sq-d); }
-        .selected { background: rgba(0, 229, 255, 0.4) !important; }
+        .highlight { background: rgba(0, 229, 255, 0.3) !important; box-shadow: inset 0 0 10px var(--accent); }
 
-        .piece { width: 90%; height: 90%; background-size: contain; background-repeat: no-repeat; background-position: center; }
+        .piece { width: 85%; height: 85%; background-size: contain; background-repeat: no-repeat; background-position: center; transition: 0.2s; }
 
-        .btn-action-main { 
-            background: var(--accent); 
-            color: #000; 
-            border: none; 
-            padding: 18px; 
-            font-weight: 900; 
-            cursor: pointer; 
-            width: 100%; 
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
+        .btn-start { 
+            background: var(--accent); color: #000; border: none; 
+            padding: 15px; font-weight: 900; cursor: pointer; width: 100%;
+            text-transform: uppercase; letter-spacing: 1px;
         }
         
-        #victory-overlay { display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; }
+        #turn-info { font-size: 11px; margin-top: 10px; letter-spacing: 2px; color: var(--accent); font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="victory-overlay">
-    <h1 id="win-msg" style="color:var(--accent)">VITÓRIA</h1>
-    <button class="btn-action-main" style="width: 200px" onclick="location.reload()">REINICIAR</button>
-</div>
-
 <div id="app">
     <aside>
-        <div class="menu-content">
-            <div class="logo-header">WAR ENGINE v6.1</div>
-            
+        <div class="scroll-area">
             <div class="tabs">
-                <button class="tab-btn active" onclick="switchTab('tab-w')">TIME W</button>
-                <button class="tab-btn" onclick="switchTab('tab-b')">TIME B</button>
-                <button class="tab-btn" onclick="switchTab('tab-config')">SISTEMA</button>
+                <button class="tab-btn active" onclick="tab('w')">BASE W</button>
+                <button class="tab-btn" onclick="tab('b')">BASE B</button>
+                <button class="tab-btn" onclick="tab('s')">SISTEMA</button>
             </div>
 
             <div id="tab-w" class="tab-content active"></div>
             <div id="tab-b" class="tab-content"></div>
-            <div id="tab-config" class="tab-content">
-                <div class="p-card"><label>MÚSICA</label><input type="file" onchange="storeGlobal('bgm', this)"></div>
-                <div class="p-card"><label>VOLUME</label><input type="range" id="vol-control" min="0" max="1" step="0.1" value="0.5" style="width:100%"></div>
-                <button onclick="clearAllData()" style="width:100%; font-size:10px; background:red; color:white; border:none; padding:10px; margin-top:10px">RESETAR TUDO</button>
+            <div id="tab-s" class="tab-content" style="grid-template-columns: 1fr;">
+                <div class="p-card"><label>MÚSICA (BGM)</label><input type="file" onchange="sys('bgm', this)"></div>
+                <div class="p-card"><label>VOLUME</label><input type="range" id="vol" min="0" max="1" step="0.1" value="0.5" style="width:100%"></div>
             </div>
-
-            <div id="war-log"></div>
         </div>
-        <button class="btn-action-main" onclick="initGameEngine()">ATIVAR SISTEMA</button>
+        <button class="btn-start" onclick="start()">INICIAR OPERAÇÃO</button>
     </aside>
 
     <main>
         <div id="board"></div>
-        <div id="status-turn" style="font-size: 10px; margin-top: 10px; color: var(--accent);">TURNO: BRANCO</div>
+        <div id="turn-info">SISTEMA: OFFLINE</div>
     </main>
 </div>
 
 <script>
-    // Gerenciador de Banco de Dados
-    const DB_NAME = "WarChessMobileDB";
-    let db, storage = { pieces: {}, global: {} };
-    const request = indexedDB.open(DB_NAME, 1);
-    request.onupgradeneeded = e => e.target.result.createObjectStore("assets");
-    request.onsuccess = e => { db = e.target.result; loadSavedAssets(); };
+    const dbName = "WarEngineV7";
+    let db, store = { p: {}, g: {} };
+    const req = indexedDB.open(dbName, 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore("data");
+    req.onsuccess = e => { db = e.target.result; load(); };
 
-    let engineActive = false, currentTurn = 'B', selectedCell = null;
-    let bgmPlayer = new Audio(); bgmPlayer.loop = true;
+    let active = false, turn = 'B', sel = null;
+    let bgm = new Audio(); bgm.loop = true;
 
     const layout = [
         'T1_P','C1_P','B1_P','Q_P','K_P','B2_P','C2_P','T2_P',
@@ -138,103 +126,93 @@
         'P1_B','P2_B','P3_B','P4_B','P5_B','P6_B','P7_B','P8_B',
         'T1_B','C1_B','B1_B','Q_B','K_B','B2_B','C2_B','T2_B'
     ];
-    let boardState = [...layout];
+    let board = [...layout];
 
-    function loadSavedAssets() {
-        db.transaction("assets", "readonly").objectStore("assets").get("data").onsuccess = e => {
+    function load() {
+        db.transaction("data").objectStore("data").get("assets").onsuccess = e => {
             if(e.target.result) {
-                storage = e.target.result;
-                if(storage.global.bgm) bgmPlayer.src = storage.global.bgm;
+                store = e.target.result;
+                if(store.g.bgm) bgm.src = store.g.bgm;
             }
-            buildUI();
+            initUI();
         };
     }
 
-    function buildUI() {
+    function initUI() {
         layout.forEach(id => {
             if(!id) return;
-            const tab = document.getElementById(id.endsWith('_B') ? 'tab-w' : 'tab-b');
-            if(!storage.pieces[id]) storage.pieces[id] = { img: '' };
+            const container = document.getElementById(id.endsWith('_B') ? 'tab-w' : 'tab-b');
+            if(!store.p[id]) store.p[id] = { img: '' };
             const card = document.createElement('div');
             card.className = 'p-card';
-            card.innerHTML = `<label>${id}</label><input type="file" onchange="saveAsset('${id}', this)">`;
-            tab.appendChild(card);
+            card.innerHTML = `<label>${id}</label><input type="file" onchange="up('${id}', this)">`;
+            container.appendChild(card);
         });
-        drawBoard();
+        render();
     }
 
-    function saveAsset(id, input) {
+    function up(id, input) {
         const reader = new FileReader();
         reader.onload = e => {
-            storage.pieces[id].img = e.target.result;
-            db.transaction("assets", "readwrite").objectStore("assets").put(storage, "data");
-            drawBoard();
+            store.p[id].img = e.target.result;
+            db.transaction("data", "readwrite").objectStore("data").put(store, "assets");
+            render();
         };
         reader.readAsDataURL(input.files[0]);
     }
 
-    function storeGlobal(type, input) {
+    function sys(type, input) {
         const reader = new FileReader();
         reader.onload = e => {
-            storage.global[type] = e.target.result;
-            db.transaction("assets", "readwrite").objectStore("assets").put(storage, "data");
-            if(type==='bgm') { bgmPlayer.src = e.target.result; bgmPlayer.play(); }
+            store.g[type] = e.target.result;
+            db.transaction("data", "readwrite").objectStore("data").put(store, "assets");
+            if(type === 'bgm') { bgm.src = e.target.result; bgm.play(); }
         };
         reader.readAsDataURL(input.files[0]);
     }
 
-    function drawBoard() {
-        const board = document.getElementById('board');
-        board.innerHTML = '';
-        boardState.forEach((id, i) => {
+    function render() {
+        const b = document.getElementById('board');
+        b.innerHTML = '';
+        board.forEach((id, i) => {
             const sq = document.createElement('div');
             sq.className = `square ${(Math.floor(i/8)+i%8)%2==0?'l':'d'}`;
-            sq.onclick = () => onCellClick(i);
+            sq.onclick = () => click(i);
             if(id) {
                 const p = document.createElement('div');
                 p.className = 'piece';
-                if(storage.pieces[id]?.img) p.style.backgroundImage = `url(${storage.pieces[id].img})`;
+                if(store.p[id]?.img) p.style.backgroundImage = `url(${store.p[id].img})`;
                 else p.style.backgroundColor = id.endsWith('_B') ? '#fff' : '#ff0055';
                 sq.appendChild(p);
             }
-            board.appendChild(sq);
+            b.appendChild(sq);
         });
     }
 
-    function onCellClick(i) {
-        if(!engineActive) return;
-        const piece = boardState[i];
-        if(selectedCell === null) {
-            if(piece && piece.endsWith('_' + currentTurn)) {
-                selectedCell = i;
-                drawBoard();
-                document.getElementById('board').children[i].classList.add('selected');
-            }
+    function click(i) {
+        if(!active) return;
+        const p = board[i];
+        if(sel === null) {
+            if(p && p.endsWith('_' + turn)) { sel = i; render(); document.getElementById('board').children[i].classList.add('highlight'); }
         } else {
-            if(piece && piece.endsWith('_' + currentTurn)) {
-                selectedCell = i;
-                drawBoard();
-                document.getElementById('board').children[i].classList.add('selected');
-            } else {
-                boardState[i] = boardState[selectedCell];
-                boardState[selectedCell] = null;
-                currentTurn = currentTurn === 'B' ? 'P' : 'B';
-                selectedCell = null;
-                drawBoard();
-                document.getElementById('status-turn').innerText = "TURNO: " + (currentTurn==='B'?'BRANCO':'PRETO');
+            if(p && p.endsWith('_' + turn)) { sel = i; render(); document.getElementById('board').children[i].classList.add('highlight'); }
+            else {
+                board[i] = board[sel]; board[sel] = null;
+                turn = turn === 'B' ? 'P' : 'B';
+                sel = null; render();
+                document.getElementById('turn-info').innerText = "TURNO: " + (turn === 'B' ? 'BRANCO' : 'PRETO');
             }
         }
     }
 
-    function initGameEngine() { engineActive = true; if(bgmPlayer.src) bgmPlayer.play(); alert("SISTEMA ATIVADO!"); }
-    function switchTab(id) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    function start() { active = true; if(bgm.src) bgm.play(); document.getElementById('turn-info').innerText = "SISTEMA ONLINE - TURNO: BRANCO"; }
+    function tab(t) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+        document.getElementById('tab-'+t).classList.add('active');
         event.currentTarget.classList.add('active');
     }
-    document.getElementById('vol-control').oninput = e => bgmPlayer.volume = e.target.value;
-    function clearAllData() { if(confirm("Apagar tudo?")) { indexedDB.deleteDatabase(DB_NAME); location.reload(); } }
+    document.getElementById('vol').oninput = e => bgm.volume = e.target.value;
 </script>
 </body>
 </html>
