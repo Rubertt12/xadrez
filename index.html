@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>War Engine v32.4 - Pro & Audio</title>
+    <title>War Engine v32.6 - Victory Edition</title>
     <style>
-        :root { --bg: #050508; --panel: #0d0d12; --accent: #00e5ff; --danger: #ff0055; --sq-l: #1e1e24; --sq-d: #0a0a0f; }
+        :root { --bg: #050508; --panel: #0d0d12; --accent: #00e5ff; --danger: #ff0055; --sq-l: #1e1e24; --sq-d: #0a0a0f; --gold: #ffd700; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         
         body, html { 
@@ -14,6 +14,7 @@
             overflow: hidden; position: fixed; 
         }
 
+        /* LAYOUT */
         .app-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; }
         @media (min-width: 1000px) { .app-container { flex-direction: row; } }
 
@@ -40,25 +41,30 @@
         .board-wrapper { position: relative; padding: 25px; background: #111; border-radius: 12px; border: 1px solid #222; }
         #board { display: grid; grid-template-columns: repeat(8, 1fr); width: min(88vw, 70vh); height: min(88vw, 70vh); border: 2px solid #333; }
 
-        .coord-h, .coord-v { position: absolute; display: flex; font-size: 10px; color: #555; font-weight: bold; pointer-events: none; }
-        .coord-h { width: calc(100% - 50px); left: 25px; justify-content: space-around; }
-        .coord-v { height: calc(100% - 50px); top: 25px; flex-direction: column; justify-content: space-around; }
-        .top { top: 8px; } .bottom { bottom: 8px; } .left { left: 8px; } .right { right: 8px; }
-
         .sq { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
         .l { background: var(--sq-l); } .d { background: var(--sq-d); }
         .piece-container { width: 85%; height: 85%; position: relative; }
         .piece { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; }
-        .btn-remove { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; background: var(--danger); border-radius: 50%; color: white; display: flex; justify-content: center; align-items: center; font-size: 10px; border: 1px solid #fff; }
 
+        /* MODAIS */
+        .overlay { display: none; position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
+        
+        /* MODAL VITÓRIA */
+        .victory-content { text-align: center; animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .trophy-wrap { position: relative; width: 200px; height: 200px; margin: 0 auto 20px; }
+        .trophy-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 20px var(--gold)); }
+        .winner-photo-circle { 
+            position: absolute; top: 45px; left: 50%; transform: translateX(-50%);
+            width: 80px; height: 80px; border-radius: 50%; 
+            background-size: cover; background-position: center;
+            border: 3px solid var(--gold); box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+
+        /* MENU LATERAL */
         aside { position: fixed; top: 0; left: -310px; width: 300px; height: 100%; background: var(--panel); border-right: 2px solid var(--accent); transition: 0.3s; z-index: 8000; display: flex; flex-direction: column; }
         aside.open { left: 0; }
         #menu-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 8500; width: 55px; height: 55px; background: var(--accent); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #000; cursor: pointer; font-size: 24px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-
-        .overlay { display: none; position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.95); align-items: center; justify-content: center; }
-        .arena-content { width: 95%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
-        .arena-fighters { display: flex; justify-content: space-around; align-items: center; gap: 10px; }
-        .arena-box { width: 100%; aspect-ratio: 3/4; background: #111; border: 2px solid #333; border-radius: 10px; background-size: contain; background-repeat: no-repeat; background-position: center; }
 
         .tabs { display: flex; background: #000; }
         .tabs button { flex: 1; padding: 15px; background: none; border: none; color: #555; font-size: 11px; font-weight: bold; }
@@ -90,12 +96,10 @@
             <b>VOLUME GERAL</b>
             <input type="range" id="v-master" min="0" max="1" step="0.1" value="1" style="width:100%" oninput="updateMasterVolume()">
         </div>
-        
         <div class="unit-card">
             <b style="color: var(--accent)">🎶 ÁUDIO AMBIENTE</b>
             <div id="ambient-controls" style="margin-top:10px; display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
-
         <button class="btn" onclick="rollInitiative()" style="background:#222; color:var(--accent); margin-bottom: 8px;">🎲 SORTEAR INÍCIO</button>
         <button class="btn" onclick="resetGame()" style="background:var(--danger); color:#fff">⚠️ RESET TOTAL</button>
     </div>
@@ -109,23 +113,13 @@
             <div id="score-B" class="p-score">0</div>
             <input type="file" id="f-av-B" style="display:none" onchange="upAvatar('B', this)">
         </div>
-        <div style="display:flex; align-items:center; font-weight:bold; color:#444; justify-content:center">VS</div>
         <div id="card-P" class="player-card">
             <div id="img-P" class="p-img" onclick="document.getElementById('f-av-P').click()"></div>
             <div id="score-P" class="p-score" style="color:var(--danger)">0</div>
             <input type="file" id="f-av-P" style="display:none" onchange="upAvatar('P', this)">
         </div>
     </div>
-
-    <main>
-        <div class="board-wrapper">
-            <div class="coord-h top"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
-            <div class="coord-h bottom"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span></div>
-            <div class="coord-v left"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
-            <div class="coord-v right"><span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span></div>
-            <div id="board"></div>
-        </div>
-    </main>
+    <main><div class="board-wrapper"><div id="board"></div></div></main>
 </div>
 
 <div id="arena" class="overlay">
@@ -133,54 +127,53 @@
         <div class="arena-fighters">
             <div class="fighter" style="flex:1; text-align:center">
                 <div id="a-img" class="arena-box" style="border-color: var(--accent)"></div>
-                <div style="display:flex; gap:5px; margin-top:8px">
-                    <button class="btn" onclick="audioAction('atk','play')" style="background:#004444; flex:1">▶</button>
-                    <button class="btn" onclick="audioAction('atk','pause')" style="background:#440000; flex:1">||</button>
-                </div>
                 <button class="btn btn-yes" onclick="finishDuel('atk')" style="margin-top:8px">VENCEU</button>
             </div>
             <div style="font-size: 24px;">⚔️</div>
             <div class="fighter" style="flex:1; text-align:center">
                 <div id="d-img" class="arena-box" style="border-color: var(--danger)"></div>
-                <div style="display:flex; gap:5px; margin-top:8px">
-                    <button class="btn" onclick="audioAction('def','play')" style="background:#004444; flex:1">▶</button>
-                    <button class="btn" onclick="audioAction('def','pause')" style="background:#440000; flex:1">||</button>
-                </div>
                 <button class="btn" onclick="finishDuel('def')" style="background:var(--danger); color:#fff; margin-top:8px">VENCEU</button>
             </div>
         </div>
-        <button class="btn" onclick="closeArena()" style="background:#222; margin-top:10px">CANCELAR DUELO</button>
+        <button class="btn" onclick="closeArena()" style="background:#222; margin-top:10px">CANCELAR</button>
+    </div>
+</div>
+
+<div id="victory-modal" class="overlay">
+    <div class="victory-content">
+        <div class="trophy-wrap">
+            <svg class="trophy-svg" viewBox="0 0 24 24" fill="var(--gold)">
+                <path d="M18,2H6V4H18V2M20,6V10C20,12.08 18.39,13.78 16.35,13.96C15.54,15.7 13.88,17 12,17C10.12,17 8.46,15.7 7.65,13.96C5.61,13.78 4,12.08 4,10V6H20M6,10H7.29C7.11,9.38 7,8.71 7,8H6V10M18,10V8H17C17,8.71 16.89,9.38 16.71,10H18M12,19A2,2 0 0,1 14,21H10A2,2 0 0,1 12,19Z" />
+            </svg>
+            <div id="victory-photo" class="winner-photo-circle"></div>
+        </div>
+        <h1 id="victory-text" style="color:var(--gold); font-size: 28px; text-shadow: 0 0 15px rgba(255,215,0,0.5)">CAMPEÃO!</h1>
+        <p id="winner-name" style="margin: 10px 0 20px; font-weight: bold; letter-spacing: 2px;"></p>
+        <button class="btn btn-yes" onclick="location.reload()" style="width:200px">NOVO JOGO</button>
     </div>
 </div>
 
 <script>
-    // DEFINIÇÃO DAS PEÇAS E LAYOUT (POSIÇÃO CORRETA)
     const peoes = ['P1','P2','P3','P4','P5','P6','P7','P8'];
     const nobres = ['T1','C1','B1','Q1','K1','B2','C2','T2'];
     const getInitialBoard = () => [
-        ...nobres.map(id => id + '_P'),
-        ...peoes.map(id => id + '_P'),
+        ...nobres.map(id => id + '_P'), ...peoes.map(id => id + '_P'),
         ...Array(32).fill(null),
-        ...peoes.map(id => id + '_B'),
-        ...nobres.map(id => id + '_B')
+        ...peoes.map(id => id + '_B'), ...nobres.map(id => id + '_B')
     ];
 
     let db, store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''}, board: getInitialBoard() };
     let ambientAudios = { Ambiente: new Audio(), Entrada: new Audio(), Intro1: new Audio(), Intro2: new Audio() };
-    
-    const req = indexedDB.open("WarEngine_v32_4", 1);
+    let isLive = false, turn = 'B', sel = null, pending = null;
+
+    const req = indexedDB.open("WarEngine_v32_6", 1);
     req.onupgradeneeded = e => e.target.result.createObjectStore("assets");
     req.onsuccess = e => { db = e.target.result; loadData(); };
 
-    let isLive = false, turn = 'B', sel = null, pending = null;
-    let audioAtk = new Audio(), audioDef = new Audio();
-
     function loadData() {
         db.transaction("assets").objectStore("assets").get("all").onsuccess = e => {
-            if(e.target.result) {
-                store = e.target.result;
-                if(!store.board) store.board = getInitialBoard(); // Garantia caso o store esteja incompleto
-            }
+            if(e.target.result) store = e.target.result;
+            if(!store.board) store.board = getInitialBoard();
             renderBoard(); updateUI(); renderConfigLists(); setupAmbientUI();
         };
     }
@@ -192,11 +185,9 @@
         types.forEach(type => {
             if (store.g['snd' + type]) ambientAudios[type].src = store.g['snd' + type];
             ambientAudios[type].loop = (type === 'Ambiente');
-            
             const div = document.createElement('div');
             div.style = "background: #000; padding: 8px; border-radius: 5px; border: 1px solid #333; margin-bottom:5px";
-            div.innerHTML = `
-                <div style="font-size:10px; margin-bottom:5px; color:#aaa">${type.toUpperCase()}</div>
+            div.innerHTML = `<div style="font-size:10px; margin-bottom:5px; color:#aaa">${type.toUpperCase()}</div>
                 <input type="file" style="font-size:10px; width:100%; color:#555" onchange="loadAmbientAudio('${type}', this)">
                 <div style="display:flex; gap:5px; margin-top:5px">
                     <button class="btn" onclick="playAmbient('${type}')" style="padding:5px; font-size:10px; background:#004444">▶</button>
@@ -206,39 +197,36 @@
         });
     }
 
-    function loadAmbientAudio(type, input) {
+    function loadAmbientAudio(type, i) {
         const r = new FileReader();
-        r.onload = e => { store.g['snd' + type] = e.target.result; ambientAudios[type].src = e.target.result; save(); };
-        r.readAsDataURL(input.files[0]);
+        r.onload = e => { store.g['snd'+type] = e.target.result; ambientAudios[type].src = e.target.result; save(); };
+        r.readAsDataURL(i.files[0]);
     }
-
-    function playAmbient(type) { ambientAudios[type].play(); }
-    function pauseAmbient(type) { ambientAudios[type].pause(); }
-
+    function playAmbient(t) { ambientAudios[t].play(); }
+    function pauseAmbient(t) { ambientAudios[t].pause(); }
     function updateMasterVolume() {
-        const mVol = document.getElementById('v-master').value;
-        Object.values(ambientAudios).forEach(a => a.volume = mVol);
-        audioAtk.volume = mVol; audioDef.volume = mVol;
+        const v = document.getElementById('v-master').value;
+        Object.values(ambientAudios).forEach(a => a.volume = v);
     }
 
     function renderBoard() {
         const b = document.getElementById('board'); b.innerHTML = '';
-        const isEdit = document.getElementById('edit-mode').checked;
+        const edit = document.getElementById('edit-mode').checked;
         store.board.forEach((id, i) => {
             const sq = document.createElement('div'); sq.className = `sq ${(Math.floor(i/8)+i%8)%2==0?'l':'d'}`;
             sq.onclick = () => handleSq(i);
             if(id) {
-                const cont = document.createElement('div'); cont.className='piece-container';
-                const p = document.createElement('div'); p.className = 'piece';
+                const c = document.createElement('div'); c.className='piece-container';
+                const p = document.createElement('div'); p.className='piece';
                 if(store.p[id]?.img) p.style.backgroundImage = `url(${store.p[id].img})`;
                 else p.style.backgroundColor = id.endsWith('_B') ? '#fff' : '#f05';
-                cont.appendChild(p);
-                if(isEdit) {
+                c.appendChild(p);
+                if(edit) {
                     const x = document.createElement('div'); x.className='btn-remove'; x.innerText='×';
                     x.onclick=(e)=>{ e.stopPropagation(); store.board[i]=null; renderBoard(); save(); };
-                    cont.appendChild(x);
+                    c.appendChild(x);
                 }
-                sq.appendChild(cont);
+                sq.appendChild(c);
             }
             b.appendChild(sq);
         });
@@ -250,65 +238,74 @@
             if(store.board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
         } else {
             if(store.board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
-            else if(store.board[i]) { pending = {f:sel, t:i}; setupArenaAudio(); document.getElementById('arena').style.display = 'flex'; updateArena(); }
+            else if(store.board[i]) { pending = {f:sel, t:i}; document.getElementById('arena').style.display='flex'; updateArena(); }
             else { store.board[i]=store.board[sel]; store.board[sel]=null; nextTurn(); }
         }
     }
 
-    function setupArenaAudio() {
-        const idA = store.board[pending.f], idD = store.board[pending.t], mVol = document.getElementById('v-master').value;
-        audioAtk.src = store.p[idA]?.snd || ""; audioDef.src = store.p[idD]?.snd || "";
-        audioAtk.volume = (store.p[idA]?.vol ?? 0.7) * mVol; audioDef.volume = (store.p[idD]?.vol ?? 0.7) * mVol;
-    }
-
-    function audioAction(role, act) { (role === 'atk' ? audioAtk : audioDef)[act](); }
     function updateArena() {
         document.getElementById('a-img').style.backgroundImage = `url(${store.p[store.board[pending.f]]?.img || ''})`;
         document.getElementById('d-img').style.backgroundImage = `url(${store.p[store.board[pending.t]]?.img || ''})`;
     }
 
-    function finishDuel(winner) {
+    function finishDuel(w) {
         closeArena();
-        if(winner==='atk') {
+        if(w==='atk') {
             if(turn==='B') store.g.killsB++; else store.g.killsP++;
             store.board[pending.t]=store.board[pending.f]; store.board[pending.f]=null;
         } else {
             if(turn==='B') store.g.killsP++; else store.g.killsB++;
             store.board[pending.f]=null;
         }
-        nextTurn(); save();
+        checkGameOver(); nextTurn(); save();
+    }
+
+    function checkGameOver() {
+        const wb = store.board.filter(p => p?.endsWith('_B')).length;
+        const pb = store.board.filter(p => p?.endsWith('_P')).length;
+        if (wb === 0 || pb === 0) {
+            const winSide = wb === 0 ? 'P' : 'B';
+            const winName = wb === 0 ? 'PRETAS' : 'BRANCAS';
+            showVictory(winSide, winName);
+        }
+    }
+
+    function showVictory(side, name) {
+        isLive = false;
+        const modal = document.getElementById('victory-modal');
+        const photo = document.getElementById('victory-photo');
+        photo.style.backgroundImage = `url(${store.g['avatar'+side]})`;
+        document.getElementById('winner-name').innerText = `EXÉRCITO DAS ${name}`;
+        modal.style.display = 'flex';
     }
 
     function renderConfigLists() {
-        ['white','black'].forEach(side => {
-            const team = side === 'white' ? 'B' : 'P', cont = document.getElementById('list-'+side);
-            cont.innerHTML = `<h3>PEÇAS ${side.toUpperCase()}</h3>`;
+        ['white','black'].forEach(s => {
+            const team = s==='white'?'B':'P', cont = document.getElementById('list-'+s);
+            cont.innerHTML = `<h3>PEÇAS ${s.toUpperCase()}</h3>`;
             [...nobres, ...peoes].forEach(p => {
                 const id = `${p}_${team}`; if(!store.p[id]) store.p[id] = {vol: 0.7};
                 const d = document.createElement('div'); d.className = 'unit-card';
-                d.innerHTML = `${id}<br>IMG: <input type="file" onchange="upPiece('${id}','img',this)"><br>
-                    SOM: <input type="file" onchange="upPiece('${id}','snd',this)"><br>
-                    VOL: <input type="range" min="0" max="1" step="0.1" value="${store.p[id].vol}" oninput="updatePieceVol('${id}', this.value)">`;
+                d.innerHTML = `${id}<br>IMG: <input type="file" onchange="upPiece('${id}','img',this)">`;
                 cont.appendChild(d);
             });
         });
     }
 
-    function updatePieceVol(id, val) { store.p[id].vol = parseFloat(val); save(); }
-    function upPiece(id, type, input) {
-        const r = new FileReader(); r.onload = e => { store.p[id][type] = e.target.result; save(); renderBoard(); };
-        r.readAsDataURL(input.files[0]);
+    function upPiece(id, t, i) {
+        const r = new FileReader(); r.onload = e => { store.p[id][t] = e.target.result; save(); renderBoard(); };
+        r.readAsDataURL(i.files[0]);
     }
-    function upAvatar(side, input) {
-        const r = new FileReader(); r.onload = e => { store.g['avatar'+side] = e.target.result; save(); updateUI(); };
-        r.readAsDataURL(input.files[0]);
+    function upAvatar(s, i) {
+        const r = new FileReader(); r.onload = e => { store.g['avatar'+s] = e.target.result; save(); updateUI(); };
+        r.readAsDataURL(i.files[0]);
     }
     function showTab(t) {
         ['white','black','sys'].forEach(id => document.getElementById('list-'+id).style.display = (id===t?'block':'none'));
         ['t-white','t-black','t-sys'].forEach(id => document.getElementById(id).className = (id==='t-'+t?'active':''));
     }
     function nextTurn() { turn = turn==='B'?'P':'B'; sel=null; renderBoard(); updateUI(); save(); }
-    function closeArena() { document.getElementById('arena').style.display='none'; audioAtk.pause(); audioDef.pause(); }
+    function closeArena() { document.getElementById('arena').style.display='none'; }
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
     function startBattle() { isLive=true; toggleMenu(); updateUI(); }
     function rollInitiative() { turn = Math.random() < 0.5 ? 'B' : 'P'; updateUI(); alert("Começa: " + (turn==='B'?'BRANCO':'PRETO')); }
@@ -320,20 +317,12 @@
     }
     function save() { db.transaction("assets","readwrite").objectStore("assets").put(store,"all"); }
 
-    // RESET TOTAL CORRIGIDO
     function resetGame() {
-        if(confirm("⚠️ Isso apagará sons e fotos, mas o tabuleiro voltará ao início. Confirmar?")) {
-            store = { 
-                p: {}, 
-                g: {killsB:0, killsP:0, avatarB:'', avatarP:''}, 
-                board: getInitialBoard() 
-            };
-            const transaction = db.transaction("assets", "readwrite");
-            transaction.objectStore("assets").put(store, "all");
-            transaction.oncomplete = () => {
-                alert("Sistema resetado!");
-                location.reload();
-            };
+        if(confirm("⚠️ Resetar fotos, sons e placar?")) {
+            store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''}, board: getInitialBoard() };
+            const trans = db.transaction("assets", "readwrite");
+            trans.objectStore("assets").put(store, "all");
+            trans.oncomplete = () => location.reload();
         }
     }
 </script>
