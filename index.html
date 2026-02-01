@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>War Engine v32.1 - Mobile Optimized</title>
+    <title>War Engine v32.2 - Pro & Audio</title>
     <style>
         :root { --bg: #050508; --panel: #0d0d12; --accent: #00e5ff; --danger: #ff0055; --sq-l: #1e1e24; --sq-d: #0a0a0f; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -14,132 +14,52 @@
             overflow: hidden; position: fixed; 
         }
 
-        /* LAYOUT PRINCIPAL */
-        .app-container {
-            display: flex;
-            flex-direction: column;
-            width: 100vw;
-            height: 100vh;
-        }
+        .app-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; }
+        @media (min-width: 1000px) { .app-container { flex-direction: row; } }
 
-        @media (min-width: 1000px) {
-            .app-container { flex-direction: row; }
-        }
-
-        /* DASHBOARD (TOP NO MOBILE / DIREITA NO PC) */
         #dashboard {
-            background: rgba(13, 13, 18, 0.95);
-            padding: 10px;
-            display: flex;
-            gap: 10px;
-            z-index: 100;
-            border-bottom: 1px solid #222;
-            backdrop-filter: blur(10px);
+            background: rgba(13, 13, 18, 0.95); padding: 10px; display: flex; gap: 10px; z-index: 100;
+            border-bottom: 1px solid #222; backdrop-filter: blur(10px);
         }
-
         @media (min-width: 1000px) {
-            #dashboard {
-                width: 300px;
-                flex-direction: column;
-                border-bottom: none;
-                border-left: 1px solid #222;
-                justify-content: center;
-                padding: 20px;
-            }
+            #dashboard { width: 300px; flex-direction: column; border-bottom: none; border-left: 1px solid #222; justify-content: center; padding: 20px; }
         }
 
         .player-card {
             flex: 1; display: flex; align-items: center; gap: 8px; 
-            padding: 8px; border-radius: 8px; background: #000; border: 2px solid transparent;
-            transition: 0.3s;
+            padding: 8px; border-radius: 8px; background: #000; border: 2px solid transparent; transition: 0.3s;
         }
         .active-B { border-color: #fff; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
         .active-P { border-color: var(--danger); box-shadow: 0 0 15px rgba(255,0,85,0.2); }
         
-        .p-img { 
-            width: 40px; height: 40px; border-radius: 6px; 
-            background-size: cover; background-position: center; 
-            background-color: #111; cursor: pointer; border: 1px solid #333;
-        }
+        .p-img { width: 40px; height: 40px; border-radius: 6px; background-size: cover; background-position: center; background-color: #111; cursor: pointer; border: 1px solid #333; }
         @media (min-width: 1000px) { .p-img { width: 60px; height: 60px; } }
-
         .p-score { font-size: 18px; font-weight: 900; color: var(--accent); margin-left: auto; }
 
-        /* ÁREA DO JOGO */
-        main {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 5px;
-            overflow: hidden;
-        }
+        main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 5px; overflow: hidden; }
+        .board-wrapper { position: relative; padding: 25px; background: #111; border-radius: 12px; border: 1px solid #222; }
+        #board { display: grid; grid-template-columns: repeat(8, 1fr); width: min(88vw, 70vh); height: min(88vw, 70vh); border: 2px solid #333; }
 
-        .board-wrapper {
-            position: relative;
-            padding: 25px;
-            background: #111;
-            border-radius: 12px;
-            border: 1px solid #222;
-        }
-
-        #board {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            /* Tamanho dinâmico para caber em qualquer tela */
-            width: min(88vw, 70vh);
-            height: min(88vw, 70vh);
-            border: 2px solid #333;
-        }
-
-        /* COORDENADAS */
-        .coord-h, .coord-v {
-            position: absolute; display: flex; font-size: 10px; 
-            color: #555; font-weight: bold; pointer-events: none;
-        }
+        .coord-h, .coord-v { position: absolute; display: flex; font-size: 10px; color: #555; font-weight: bold; pointer-events: none; }
         .coord-h { width: calc(100% - 50px); left: 25px; justify-content: space-around; }
         .coord-v { height: calc(100% - 50px); top: 25px; flex-direction: column; justify-content: space-around; }
         .top { top: 8px; } .bottom { bottom: 8px; } .left { left: 8px; } .right { right: 8px; }
 
-        /* PEÇAS */
         .sq { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
         .l { background: var(--sq-l); } .d { background: var(--sq-d); }
         .piece-container { width: 85%; height: 85%; position: relative; }
         .piece { width: 100%; height: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; }
-        .btn-remove { 
-            position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; 
-            background: var(--danger); border-radius: 50%; color: white; 
-            display: flex; justify-content: center; align-items: center; font-size: 10px; border: 1px solid #fff;
-        }
+        .btn-remove { position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; background: var(--danger); border-radius: 50%; color: white; display: flex; justify-content: center; align-items: center; font-size: 10px; border: 1px solid #fff; }
 
-        /* MENU LATERAL */
-        aside { 
-            position: fixed; top: 0; left: -310px; width: 300px; height: 100%; 
-            background: var(--panel); border-right: 2px solid var(--accent); 
-            transition: 0.3s; z-index: 8000; display: flex; flex-direction: column; 
-        }
+        aside { position: fixed; top: 0; left: -310px; width: 300px; height: 100%; background: var(--panel); border-right: 2px solid var(--accent); transition: 0.3s; z-index: 8000; display: flex; flex-direction: column; }
         aside.open { left: 0; }
-        #menu-toggle { 
-            position: fixed; bottom: 20px; right: 20px; z-index: 8500; 
-            width: 55px; height: 55px; background: var(--accent); border-radius: 50%; 
-            display: flex; justify-content: center; align-items: center; color: #000; 
-            cursor: pointer; font-size: 24px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
+        #menu-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 8500; width: 55px; height: 55px; background: var(--accent); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #000; cursor: pointer; font-size: 24px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
 
-        /* ARENA */
-        .overlay { 
-            display: none; position: fixed; inset: 0; z-index: 9000; 
-            background: rgba(0,0,0,0.95); align-items: center; justify-content: center;
-        }
+        .overlay { display: none; position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.95); align-items: center; justify-content: center; }
         .arena-content { width: 95%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
         .arena-fighters { display: flex; justify-content: space-around; align-items: center; gap: 10px; }
-        .fighter { flex: 1; text-align: center; }
-        .arena-box { 
-            width: 100%; aspect-ratio: 3/4; background: #111; border: 2px solid #333; 
-            border-radius: 10px; background-size: contain; background-repeat: no-repeat; background-position: center;
-        }
+        .arena-box { width: 100%; aspect-ratio: 3/4; background: #111; border: 2px solid #333; border-radius: 10px; background-size: contain; background-repeat: no-repeat; background-position: center; }
 
-        /* COMPONENTES GERAIS */
         .tabs { display: flex; background: #000; }
         .tabs button { flex: 1; padding: 15px; background: none; border: none; color: #555; font-size: 11px; font-weight: bold; }
         .tabs button.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
@@ -166,8 +86,18 @@
     <div class="scroll-area" id="list-white"></div>
     <div class="scroll-area" id="list-black" style="display:none"></div>
     <div class="scroll-area" id="list-sys" style="display:none">
-        <div class="unit-card"><b>VOLUME GERAL</b><input type="range" id="v-master" min="0" max="1" step="0.1" value="1" style="width:100%"></div>
-        <button class="btn" onclick="rollInitiative()" style="background:#222; color:var(--accent)">🎲 SORTEAR INÍCIO</button>
+        <div class="unit-card">
+            <b>VOLUME GERAL</b>
+            <input type="range" id="v-master" min="0" max="1" step="0.1" value="1" style="width:100%" oninput="updateMasterVolume()">
+        </div>
+        
+        <div class="unit-card">
+            <b style="color: var(--accent)">🎶 ÁUDIO AMBIENTE</b>
+            <div id="ambient-controls" style="margin-top:10px; display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <button class="btn" onclick="rollInitiative()" style="background:#222; color:var(--accent); margin-bottom: 8px;">🎲 SORTEAR INÍCIO</button>
+        <button class="btn" onclick="resetGame()" style="background:var(--danger); color:#fff">⚠️ RESET TOTAL</button>
     </div>
     <div style="padding: 15px; background: #000;"><button class="btn btn-yes" onclick="startBattle()">ATIVAR BATALHA</button></div>
 </aside>
@@ -179,7 +109,7 @@
             <div id="score-B" class="p-score">0</div>
             <input type="file" id="f-av-B" style="display:none" onchange="upAvatar('B', this)">
         </div>
-        <div style="display:flex; align-items:center; font-weight:bold; color:#444">VS</div>
+        <div style="display:flex; align-items:center; font-weight:bold; color:#444; justify-content:center">VS</div>
         <div id="card-P" class="player-card">
             <div id="img-P" class="p-img" onclick="document.getElementById('f-av-P').click()"></div>
             <div id="score-P" class="p-score" style="color:var(--danger)">0</div>
@@ -201,7 +131,7 @@
 <div id="arena" class="overlay">
     <div class="arena-content">
         <div class="arena-fighters">
-            <div class="fighter">
+            <div class="fighter" style="flex:1; text-align:center">
                 <div id="a-img" class="arena-box" style="border-color: var(--accent)"></div>
                 <div style="display:flex; gap:5px; margin-top:8px">
                     <button class="btn" onclick="audioAction('atk','play')" style="background:#004444; flex:1">▶</button>
@@ -209,8 +139,8 @@
                 </div>
                 <button class="btn btn-yes" onclick="finishDuel('atk')" style="margin-top:8px">VENCEU</button>
             </div>
-            <div style="font-size: 20px; font-weight: 900;">⚔️</div>
-            <div class="fighter">
+            <div style="font-size: 24px;">⚔️</div>
+            <div class="fighter" style="flex:1; text-align:center">
                 <div id="d-img" class="arena-box" style="border-color: var(--danger)"></div>
                 <div style="display:flex; gap:5px; margin-top:8px">
                     <button class="btn" onclick="audioAction('def','play')" style="background:#004444; flex:1">▶</button>
@@ -225,7 +155,9 @@
 
 <script>
     let db, store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''} };
-    const req = indexedDB.open("WarEngine_v32_1", 1);
+    let ambientAudios = { Ambiente: new Audio(), Entrada: new Audio(), Intro1: new Audio(), Intro2: new Audio() };
+    
+    const req = indexedDB.open("WarEngine_v32_2", 1);
     req.onupgradeneeded = e => e.target.result.createObjectStore("assets");
     req.onsuccess = e => { db = e.target.result; loadData(); };
 
@@ -239,8 +171,44 @@
     function loadData() {
         db.transaction("assets").objectStore("assets").get("all").onsuccess = e => {
             if(e.target.result) store = e.target.result;
-            renderBoard(); updateUI(); renderConfigLists();
+            renderBoard(); updateUI(); renderConfigLists(); setupAmbientUI();
         };
+    }
+
+    function setupAmbientUI() {
+        const container = document.getElementById('ambient-controls');
+        const types = ['Ambiente', 'Entrada', 'Intro1', 'Intro2'];
+        container.innerHTML = '';
+        types.forEach(type => {
+            if (store.g['snd' + type]) ambientAudios[type].src = store.g['snd' + type];
+            ambientAudios[type].loop = (type === 'Ambiente');
+            
+            const div = document.createElement('div');
+            div.style = "background: #000; padding: 8px; border-radius: 5px; border: 1px solid #333; margin-bottom:5px";
+            div.innerHTML = `
+                <div style="font-size:10px; margin-bottom:5px; color:#aaa">${type.toUpperCase()}</div>
+                <input type="file" style="font-size:10px; width:100%; color:#555" onchange="loadAmbientAudio('${type}', this)">
+                <div style="display:flex; gap:5px; margin-top:5px">
+                    <button class="btn" onclick="playAmbient('${type}')" style="padding:5px; font-size:10px; background:#004444">▶</button>
+                    <button class="btn" onclick="pauseAmbient('${type}')" style="padding:5px; font-size:10px; background:#440000">||</button>
+                </div>`;
+            container.appendChild(div);
+        });
+    }
+
+    function loadAmbientAudio(type, input) {
+        const r = new FileReader();
+        r.onload = e => { store.g['snd' + type] = e.target.result; ambientAudios[type].src = e.target.result; save(); };
+        r.readAsDataURL(input.files[0]);
+    }
+
+    function playAmbient(type) { ambientAudios[type].play(); }
+    function pauseAmbient(type) { ambientAudios[type].pause(); }
+
+    function updateMasterVolume() {
+        const mVol = document.getElementById('v-master').value;
+        Object.values(ambientAudios).forEach(a => a.volume = mVol);
+        audioAtk.volume = mVol; audioDef.volume = mVol;
     }
 
     function renderBoard() {
@@ -272,9 +240,7 @@
             if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
         } else {
             if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
-            else if(board[i]) { 
-                pending = {f:sel, t:i}; setupArenaAudio(); document.getElementById('arena').style.display = 'flex'; updateArena(); 
-            }
+            else if(board[i]) { pending = {f:sel, t:i}; setupArenaAudio(); document.getElementById('arena').style.display = 'flex'; updateArena(); }
             else { board[i]=board[sel]; board[sel]=null; nextTurn(); }
         }
     }
@@ -343,6 +309,13 @@
         document.getElementById('card-P').className = 'player-card' + (turn==='P'&&isLive?' active-P':'');
     }
     function save() { db.transaction("assets","readwrite").objectStore("assets").put(store,"all"); }
+
+    function resetGame() {
+        if(confirm("⚠️ AVISO: Isso apagará TODOS os dados salvos (fotos, sons e placar) e resetará o tabuleiro. Deseja continuar?")) {
+            const reqReset = indexedDB.deleteDatabase("WarEngine_v32_2");
+            reqReset.onsuccess = () => { alert("Sistema resetado!"); location.reload(); };
+        }
+    }
 </script>
 </body>
 </html>
