@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>War Engine v32.9 - Full Restoration</title>
+    <title>War Engine v33.0 - Cinematic Audio</title>
     <style>
         :root { --bg: #050508; --panel: #0d0d12; --accent: #00e5ff; --danger: #ff0055; --sq-l: #1e1e24; --sq-d: #0a0a0f; --gold: #ffd700; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -94,12 +94,10 @@
             <b>VOLUME MESTRE</b>
             <input type="range" id="v-master" min="0" max="1" step="0.1" value="1" style="width:100%" oninput="updateMasterVolume()">
         </div>
-        
         <div class="unit-card">
             <b style="color: var(--accent)">🎶 ÁUDIO AMBIENTE</b>
             <div id="ambient-controls" style="margin-top:10px; display: flex; flex-direction: column; gap: 12px;"></div>
         </div>
-
         <button class="btn" onclick="rollInitiative()" style="background:#222; color:var(--accent); margin-bottom: 8px; width: 100%">🎲 SORTEAR INÍCIO</button>
         <button class="btn" onclick="resetGame()" style="background:var(--danger); color:#fff; width: 100%">⚠️ RESET TOTAL</button>
     </div>
@@ -172,8 +170,9 @@
     let ambientAudios = { Ambiente: new Audio(), Entrada: new Audio(), Intro1: new Audio(), Intro2: new Audio() };
     let audioAtk = new Audio(), audioDef = new Audio();
     let isLive = false, turn = 'B', sel = null, pending = null;
+    let fadeInterval = null;
 
-    const req = indexedDB.open("WarEngine_v32_9", 1);
+    const req = indexedDB.open("WarEngine_v33_0", 1);
     req.onupgradeneeded = e => e.target.result.createObjectStore("assets");
     req.onsuccess = e => { db = e.target.result; loadData(); };
 
@@ -186,25 +185,44 @@
     }
 
     function setupAmbientUI() {
-        const cont = document.getElementById('ambient-controls');
-        cont.innerHTML = '';
-        const types = ['Ambiente', 'Entrada', 'Intro1', 'Intro2'];
-        
-        types.forEach(type => {
+        const cont = document.getElementById('ambient-controls'); cont.innerHTML = '';
+        ['Ambiente', 'Entrada', 'Intro1', 'Intro2'].forEach(type => {
             if(store.g['snd'+type]) ambientAudios[type].src = store.g['snd'+type];
             ambientAudios[type].loop = (type === 'Ambiente');
-            
             const div = document.createElement('div');
             div.style = "background: #000; padding: 8px; border-radius: 5px; border: 1px solid #333;";
-            div.innerHTML = `
-                <div style="font-size:10px; margin-bottom:5px; color:#aaa">${type.toUpperCase()}</div>
-                <input type="file" style="font-size:10px; width:100%; color:#555" onchange="upAmb('${type}', this)">
+            div.innerHTML = `<div style="font-size:10px; margin-bottom:5px; color:#aaa">${type.toUpperCase()}</div>
+                <input type="file" style="font-size:10px; width:100%" onchange="upAmb('${type}', this)">
                 <div style="display:flex; gap:5px; margin-top:5px">
                     <button class="btn" onclick="ambientAudios['${type}'].play()" style="flex:1; background:#004444">▶</button>
                     <button class="btn" onclick="ambientAudios['${type}'].pause()" style="flex:1; background:#440000">||</button>
                 </div>`;
             cont.appendChild(div);
         });
+    }
+
+    /* LÓGICA DE FADE OUT / FADE IN */
+    function fadeAmbient(targetVol, duration = 1000) {
+        clearInterval(fadeInterval);
+        const masterVol = parseFloat(document.getElementById('v-master').value);
+        const finalTarget = targetVol * masterVol;
+        const step = 0.05;
+        const intervalTime = duration / (1 / step);
+
+        fadeInterval = setInterval(() => {
+            let allDone = true;
+            Object.values(ambientAudios).forEach(audio => {
+                if (!audio.paused) {
+                    if (Math.abs(audio.volume - finalTarget) > step) {
+                        audio.volume += (audio.volume < finalTarget) ? step : -step;
+                        allDone = false;
+                    } else {
+                        audio.volume = finalTarget;
+                    }
+                }
+            });
+            if (allDone) clearInterval(fadeInterval);
+        }, intervalTime);
     }
 
     function upAmb(t, i) {
@@ -255,6 +273,7 @@
     function openArena() {
         const idA = store.board[pending.f], idD = store.board[pending.t];
         const vM = document.getElementById('v-master').value;
+        fadeAmbient(0.1); // Fade Out para volume baixo (10%)
         document.getElementById('a-img').style.backgroundImage = `url(${store.p[idA]?.img || ''})`;
         document.getElementById('d-img').style.backgroundImage = `url(${store.p[idD]?.img || ''})`;
         audioAtk.src = store.p[idA]?.snd || ""; audioDef.src = store.p[idD]?.snd || "";
@@ -274,6 +293,7 @@
             store.board[pending.f]=null;
         }
         document.getElementById('arena').style.display='none';
+        fadeAmbient(1); // Fade In volta para volume normal (100% do mestre)
         checkGameOver(); nextTurn(); save();
     }
 
@@ -317,7 +337,7 @@
         ['t-white','t-black','t-sys'].forEach(id => document.getElementById(id).className = (id==='t-'+t?'active':''));
     }
     function nextTurn() { turn = turn==='B'?'P':'B'; sel=null; renderBoard(); updateUI(); save(); }
-    function closeArena() { document.getElementById('arena').style.display='none'; audioAtk.pause(); audioDef.pause(); }
+    function closeArena() { document.getElementById('arena').style.display='none'; audioAtk.pause(); audioDef.pause(); fadeAmbient(1); }
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
     function startBattle() { isLive=true; toggleMenu(); updateUI(); }
     function rollInitiative() { turn = Math.random() < 0.5 ? 'B' : 'P'; updateUI(); alert("Começa: " + (turn==='B'?'BRANCO':'PRETO')); }
@@ -329,11 +349,9 @@
     }
     function save() { db.transaction("assets","readwrite").objectStore("assets").put(store,"all"); }
     function resetGame() {
-        if(confirm("⚠️ Reset total? Apaga fotos e sons, mas o tabuleiro volta ao início.")) {
+        if(confirm("⚠️ Reset total?")) {
             store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''}, board: getInitialBoard() };
-            const trans = db.transaction("assets", "readwrite");
-            trans.objectStore("assets").put(store, "all");
-            trans.oncomplete = () => location.reload();
+            save(); location.reload();
         }
     }
 </script>
