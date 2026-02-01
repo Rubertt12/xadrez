@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>War Engine v32.2 - Pro & Audio</title>
+    <title>War Engine v32.4 - Pro & Audio</title>
     <style>
         :root { --bg: #050508; --panel: #0d0d12; --accent: #00e5ff; --danger: #ff0055; --sq-l: #1e1e24; --sq-d: #0a0a0f; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -154,23 +154,33 @@
 </div>
 
 <script>
-    let db, store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''} };
+    // DEFINIÇÃO DAS PEÇAS E LAYOUT (POSIÇÃO CORRETA)
+    const peoes = ['P1','P2','P3','P4','P5','P6','P7','P8'];
+    const nobres = ['T1','C1','B1','Q1','K1','B2','C2','T2'];
+    const getInitialBoard = () => [
+        ...nobres.map(id => id + '_P'),
+        ...peoes.map(id => id + '_P'),
+        ...Array(32).fill(null),
+        ...peoes.map(id => id + '_B'),
+        ...nobres.map(id => id + '_B')
+    ];
+
+    let db, store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''}, board: getInitialBoard() };
     let ambientAudios = { Ambiente: new Audio(), Entrada: new Audio(), Intro1: new Audio(), Intro2: new Audio() };
     
-    const req = indexedDB.open("WarEngine_v32_2", 1);
+    const req = indexedDB.open("WarEngine_v32_4", 1);
     req.onupgradeneeded = e => e.target.result.createObjectStore("assets");
     req.onsuccess = e => { db = e.target.result; loadData(); };
 
     let isLive = false, turn = 'B', sel = null, pending = null;
     let audioAtk = new Audio(), audioDef = new Audio();
 
-    const peçasIds = ['T1','C1','B1','Q1','K1','B2','C2','T2','P1','P2','P3','P4','P5','P6','P7','P8'];
-    const layout = [...peçasIds.map(p=>p+'_P'), ...Array(32).fill(null), ...peçasIds.map(p=>p+'_B')];
-    let board = [...layout];
-
     function loadData() {
         db.transaction("assets").objectStore("assets").get("all").onsuccess = e => {
-            if(e.target.result) store = e.target.result;
+            if(e.target.result) {
+                store = e.target.result;
+                if(!store.board) store.board = getInitialBoard(); // Garantia caso o store esteja incompleto
+            }
             renderBoard(); updateUI(); renderConfigLists(); setupAmbientUI();
         };
     }
@@ -214,7 +224,7 @@
     function renderBoard() {
         const b = document.getElementById('board'); b.innerHTML = '';
         const isEdit = document.getElementById('edit-mode').checked;
-        board.forEach((id, i) => {
+        store.board.forEach((id, i) => {
             const sq = document.createElement('div'); sq.className = `sq ${(Math.floor(i/8)+i%8)%2==0?'l':'d'}`;
             sq.onclick = () => handleSq(i);
             if(id) {
@@ -225,7 +235,7 @@
                 cont.appendChild(p);
                 if(isEdit) {
                     const x = document.createElement('div'); x.className='btn-remove'; x.innerText='×';
-                    x.onclick=(e)=>{ e.stopPropagation(); board[i]=null; renderBoard(); save(); };
+                    x.onclick=(e)=>{ e.stopPropagation(); store.board[i]=null; renderBoard(); save(); };
                     cont.appendChild(x);
                 }
                 sq.appendChild(cont);
@@ -237,34 +247,34 @@
     function handleSq(i) {
         if(!isLive) return;
         if(sel === null) {
-            if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
+            if(store.board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
         } else {
-            if(board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
-            else if(board[i]) { pending = {f:sel, t:i}; setupArenaAudio(); document.getElementById('arena').style.display = 'flex'; updateArena(); }
-            else { board[i]=board[sel]; board[sel]=null; nextTurn(); }
+            if(store.board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
+            else if(store.board[i]) { pending = {f:sel, t:i}; setupArenaAudio(); document.getElementById('arena').style.display = 'flex'; updateArena(); }
+            else { store.board[i]=store.board[sel]; store.board[sel]=null; nextTurn(); }
         }
     }
 
     function setupArenaAudio() {
-        const idA = board[pending.f], idD = board[pending.t], mVol = document.getElementById('v-master').value;
+        const idA = store.board[pending.f], idD = store.board[pending.t], mVol = document.getElementById('v-master').value;
         audioAtk.src = store.p[idA]?.snd || ""; audioDef.src = store.p[idD]?.snd || "";
         audioAtk.volume = (store.p[idA]?.vol ?? 0.7) * mVol; audioDef.volume = (store.p[idD]?.vol ?? 0.7) * mVol;
     }
 
     function audioAction(role, act) { (role === 'atk' ? audioAtk : audioDef)[act](); }
     function updateArena() {
-        document.getElementById('a-img').style.backgroundImage = `url(${store.p[board[pending.f]]?.img || ''})`;
-        document.getElementById('d-img').style.backgroundImage = `url(${store.p[board[pending.t]]?.img || ''})`;
+        document.getElementById('a-img').style.backgroundImage = `url(${store.p[store.board[pending.f]]?.img || ''})`;
+        document.getElementById('d-img').style.backgroundImage = `url(${store.p[store.board[pending.t]]?.img || ''})`;
     }
 
     function finishDuel(winner) {
         closeArena();
         if(winner==='atk') {
             if(turn==='B') store.g.killsB++; else store.g.killsP++;
-            board[pending.t]=board[pending.f]; board[pending.f]=null;
+            store.board[pending.t]=store.board[pending.f]; store.board[pending.f]=null;
         } else {
             if(turn==='B') store.g.killsP++; else store.g.killsB++;
-            board[pending.f]=null;
+            store.board[pending.f]=null;
         }
         nextTurn(); save();
     }
@@ -273,7 +283,7 @@
         ['white','black'].forEach(side => {
             const team = side === 'white' ? 'B' : 'P', cont = document.getElementById('list-'+side);
             cont.innerHTML = `<h3>PEÇAS ${side.toUpperCase()}</h3>`;
-            peçasIds.forEach(p => {
+            [...nobres, ...peoes].forEach(p => {
                 const id = `${p}_${team}`; if(!store.p[id]) store.p[id] = {vol: 0.7};
                 const d = document.createElement('div'); d.className = 'unit-card';
                 d.innerHTML = `${id}<br>IMG: <input type="file" onchange="upPiece('${id}','img',this)"><br>
@@ -297,7 +307,7 @@
         ['white','black','sys'].forEach(id => document.getElementById('list-'+id).style.display = (id===t?'block':'none'));
         ['t-white','t-black','t-sys'].forEach(id => document.getElementById(id).className = (id==='t-'+t?'active':''));
     }
-    function nextTurn() { turn = turn==='B'?'P':'B'; sel=null; renderBoard(); updateUI(); }
+    function nextTurn() { turn = turn==='B'?'P':'B'; sel=null; renderBoard(); updateUI(); save(); }
     function closeArena() { document.getElementById('arena').style.display='none'; audioAtk.pause(); audioDef.pause(); }
     function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
     function startBattle() { isLive=true; toggleMenu(); updateUI(); }
@@ -310,10 +320,20 @@
     }
     function save() { db.transaction("assets","readwrite").objectStore("assets").put(store,"all"); }
 
+    // RESET TOTAL CORRIGIDO
     function resetGame() {
-        if(confirm("⚠️ AVISO: Isso apagará TODOS os dados salvos (fotos, sons e placar) e resetará o tabuleiro. Deseja continuar?")) {
-            const reqReset = indexedDB.deleteDatabase("WarEngine_v32_2");
-            reqReset.onsuccess = () => { alert("Sistema resetado!"); location.reload(); };
+        if(confirm("⚠️ Isso apagará sons e fotos, mas o tabuleiro voltará ao início. Confirmar?")) {
+            store = { 
+                p: {}, 
+                g: {killsB:0, killsP:0, avatarB:'', avatarP:''}, 
+                board: getInitialBoard() 
+            };
+            const transaction = db.transaction("assets", "readwrite");
+            transaction.objectStore("assets").put(store, "all");
+            transaction.oncomplete = () => {
+                alert("Sistema resetado!");
+                location.reload();
+            };
         }
     }
 </script>
