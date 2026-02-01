@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>War Engine v33.0 - Cinematic Audio</title>
+    <title>War Engine v33.2 - Battle Master</title>
     <style>
         :root { --bg: #050508; --panel: #0d0d12; --accent: #00e5ff; --danger: #ff0055; --sq-l: #1e1e24; --sq-d: #0a0a0f; --gold: #ffd700; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -47,8 +47,6 @@
 
         /* OVERLAYS */
         .overlay { display: none; position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); align-items: center; justify-content: center; }
-        
-        /* ARENA */
         .arena-content { width: 95%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
         .arena-fighters { display: flex; justify-content: space-around; align-items: center; gap: 10px; }
         .arena-box { width: 100%; aspect-ratio: 3/4; background: #111; border: 2px solid #333; border-radius: 10px; background-size: cover; background-position: center; }
@@ -80,7 +78,10 @@
 <aside id="sidebar">
     <div style="padding: 20px; border-bottom: 1px solid #333;">
         <h2 style="color:var(--accent);">WAR ENGINE PRO</h2>
-        <label style="font-size: 12px;"><input type="checkbox" id="edit-mode" onchange="renderBoard()"> MODO EDIÇÃO</label>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px">
+            <label style="font-size: 12px;"><input type="checkbox" id="edit-mode" onchange="renderBoard()"> MODO EDIÇÃO (REMOVER)</label>
+            <label style="font-size: 12px; color: var(--accent); font-weight:bold;"><input type="checkbox" id="free-move"> MOVIMENTAÇÃO LIVRE</label>
+        </div>
     </div>
     <div class="tabs">
         <button id="t-white" class="active" onclick="showTab('white')">BRANCAS</button>
@@ -99,6 +100,7 @@
             <div id="ambient-controls" style="margin-top:10px; display: flex; flex-direction: column; gap: 12px;"></div>
         </div>
         <button class="btn" onclick="rollInitiative()" style="background:#222; color:var(--accent); margin-bottom: 8px; width: 100%">🎲 SORTEAR INÍCIO</button>
+        <button class="btn" onclick="clearBoardPieces()" style="background:#333; color:#fff; margin-bottom: 8px; width: 100%">🧹 LIMPAR TABULEIRO</button>
         <button class="btn" onclick="resetGame()" style="background:var(--danger); color:#fff; width: 100%">⚠️ RESET TOTAL</button>
     </div>
     <div style="padding: 15px; background: #000;"><button class="btn btn-yes" style="width: 100%" onclick="startBattle()">ATIVAR BATALHA</button></div>
@@ -172,7 +174,7 @@
     let isLive = false, turn = 'B', sel = null, pending = null;
     let fadeInterval = null;
 
-    const req = indexedDB.open("WarEngine_v33_0", 1);
+    const req = indexedDB.open("WarEngine_v33_2", 1);
     req.onupgradeneeded = e => e.target.result.createObjectStore("assets");
     req.onsuccess = e => { db = e.target.result; loadData(); };
 
@@ -201,14 +203,12 @@
         });
     }
 
-    /* LÓGICA DE FADE OUT / FADE IN */
     function fadeAmbient(targetVol, duration = 1000) {
         clearInterval(fadeInterval);
         const masterVol = parseFloat(document.getElementById('v-master').value);
         const finalTarget = targetVol * masterVol;
         const step = 0.05;
         const intervalTime = duration / (1 / step);
-
         fadeInterval = setInterval(() => {
             let allDone = true;
             Object.values(ambientAudios).forEach(audio => {
@@ -216,9 +216,7 @@
                     if (Math.abs(audio.volume - finalTarget) > step) {
                         audio.volume += (audio.volume < finalTarget) ? step : -step;
                         allDone = false;
-                    } else {
-                        audio.volume = finalTarget;
-                    }
+                    } else { audio.volume = finalTarget; }
                 }
             });
             if (allDone) clearInterval(fadeInterval);
@@ -261,23 +259,39 @@
 
     function handleSq(i) {
         if(!isLive) return;
+        const free = document.getElementById('free-move').checked;
+        
         if(sel === null) {
-            if(store.board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
+            if(store.board[i] && (free || store.board[i].endsWith('_'+turn))) {
+                sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444";
+            }
         } else {
-            if(store.board[i]?.endsWith('_'+turn)) { sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444"; }
+            // Se clicar na própria peça (ou qualquer peça no modo livre), troca a seleção
+            // EXCETO se for clicar numa peça inimiga para atacar
+            const clickingOwnColor = store.board[i] && store.board[i].endsWith(store.board[sel].slice(-2));
+            
+            if(store.board[i] && (free ? clickingOwnColor : store.board[i].endsWith('_'+turn))) {
+                sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444";
+            }
+            // ATAQUE (Sempre funciona se clicar em cima de outra peça de cor diferente ou no modo livre)
             else if(store.board[i]) { pending = {f:sel, t:i}; openArena(); }
-            else { store.board[i]=store.board[sel]; store.board[sel]=null; nextTurn(); }
+            // MOVIMENTO
+            else { 
+                store.board[i]=store.board[sel]; store.board[sel]=null; 
+                if(!free) nextTurn(); else { sel=null; renderBoard(); save(); } 
+            }
         }
     }
 
     function openArena() {
         const idA = store.board[pending.f], idD = store.board[pending.t];
-        const vM = document.getElementById('v-master').value;
-        fadeAmbient(0.1); // Fade Out para volume baixo (10%)
+        fadeAmbient(0.1);
         document.getElementById('a-img').style.backgroundImage = `url(${store.p[idA]?.img || ''})`;
         document.getElementById('d-img').style.backgroundImage = `url(${store.p[idD]?.img || ''})`;
         audioAtk.src = store.p[idA]?.snd || ""; audioDef.src = store.p[idD]?.snd || "";
-        audioAtk.volume = (store.p[idA]?.vol ?? 0.7) * vM; audioDef.volume = (store.p[idD]?.vol ?? 0.7) * vM;
+        const master = document.getElementById('v-master').value;
+        audioAtk.volume = (store.p[idA]?.vol ?? 0.7) * master;
+        audioDef.volume = (store.p[idD]?.vol ?? 0.7) * master;
         document.getElementById('arena').style.display='flex';
     }
 
@@ -285,16 +299,24 @@
 
     function finishDuel(w) {
         audioAtk.pause(); audioDef.pause();
+        const free = document.getElementById('free-move').checked;
         if(w==='atk') {
-            if(turn==='B') store.g.killsB++; else store.g.killsP++;
+            if(store.board[pending.f].endsWith('_B')) store.g.killsB++; else store.g.killsP++;
             store.board[pending.t]=store.board[pending.f]; store.board[pending.f]=null;
         } else {
-            if(turn==='B') store.g.killsP++; else store.g.killsB++;
+            if(store.board[pending.t].endsWith('_B')) store.g.killsB++; else store.g.killsP++;
             store.board[pending.f]=null;
         }
         document.getElementById('arena').style.display='none';
-        fadeAmbient(1); // Fade In volta para volume normal (100% do mestre)
-        checkGameOver(); nextTurn(); save();
+        fadeAmbient(1); checkGameOver(); 
+        if(!free) nextTurn(); else { sel=null; renderBoard(); save(); }
+    }
+
+    function clearBoardPieces() {
+        if(confirm("Deseja remover todas as peças do tabuleiro para arrumar do zero?")) {
+            store.board = Array(64).fill(null);
+            renderBoard(); save();
+        }
     }
 
     function checkGameOver() {
@@ -348,12 +370,7 @@
         document.getElementById('card-P').className = 'player-card' + (turn==='P'&&isLive?' active-P':'');
     }
     function save() { db.transaction("assets","readwrite").objectStore("assets").put(store,"all"); }
-    function resetGame() {
-        if(confirm("⚠️ Reset total?")) {
-            store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''}, board: getInitialBoard() };
-            save(); location.reload();
-        }
-    }
+    function resetGame() { if(confirm("⚠️ Reset total?")) { store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''}, board: getInitialBoard() }; save(); location.reload(); } }
 </script>
 </body>
 </html>
