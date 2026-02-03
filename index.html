@@ -46,13 +46,14 @@
         <div id="card-B" class="player-card">
             
             <div id="img-B" class="p-img" onclick="document.getElementById('f-av-B').click()"></div>
-            <div id="score-B"  class="p-score">0</div><input type="text" id="name-B" value="Jogador 1" style="width: 70px; margin-top:5px; background:#222; border-radius:20px; color:#029191; text-align:center">
             <input type="file" id="f-av-B" style="display:none" onchange="upAvatar('B', this)">
+            <input type="text" id="name-B" value="Jogador 1" style="width: 70px; margin-top:5px; background:#222; border-radius:20px; color:#029191; text-align:center">
+            <div id="score-B"  class="p-score">0</div>
         </div>
         <div id="card-P" class="player-card">
             <div id="img-P" class="p-img" onclick="document.getElementById('f-av-P').click()"></div>
+            <input type="text" id="name-P" value="Jogador 2" style="width: 70px; margin-top:5px; background:#222; border-radius:20px; color:#b90303; text-align:center">
             <div id="score-P" class="p-score" style="color:var(--danger)">0</div>
-            <input type="text" id="name-P" value="Jogador 2" style="width: 70px; margin-top:5px; background:#222; border-radius:20px; color:#029191; text-align:center">
             <input type="file" id="f-av-P" style="display:none" onchange="upAvatar('P', this)">
         </div>
     </div>
