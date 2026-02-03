@@ -6,10 +6,10 @@
             font-family: 'Segoe UI', system-ui, sans-serif; color: white; 
             touch-action: pan-x pan-y;
             background-image: url('/img/_image.webp');
-    background-size: 300px; /* Define o tamanho de cada imagem repetida */
-    background-repeat: repeat; 
-    background-position: center;
-    background-attachment: fixed;
+            background-size: 300px; /* Define o tamanho de cada imagem repetida */
+            background-repeat: repeat; 
+            background-position: center;
+            background-attachment: fixed;
             
             
             
