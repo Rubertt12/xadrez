@@ -6,7 +6,7 @@
             font-family: 'Segoe UI', system-ui, sans-serif; color: white; 
             touch-action: pan-x pan-y;
             background-image: url('/img/_image.webp');
-            background-size: 300px; /* Define o tamanho de cada imagem repetida */
+            background-size: 310px; /* Define o tamanho de cada imagem repetida */
             background-repeat: repeat; 
             background-position: center;
             background-attachment: fixed;
@@ -20,8 +20,8 @@
 
         /* DASHBOARD */
         #dashboard {
-            background: rgba(13, 13, 18, 0.95); padding: 10px; display: flex; gap: 10px; z-index: 100;
-            border-bottom: 1px solid #222; backdrop-filter: blur(10px);
+            background: rgba(58, 57, 57, 0.95); padding: 10px; display: flex; gap: 10px; z-index: 100;
+            border-bottom: 1px solid #aba8a8; backdrop-filter: blur(10px);
         }
         @media (min-width: 1000px) {
             #dashboard { width: 300px; flex-direction: column; border-bottom: none; border-left: 1px solid #222; justify-content: center; padding: 20px; }
