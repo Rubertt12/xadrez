@@ -285,3 +285,14 @@ function resetGame() {
         save(); location.reload(); 
     } 
 }
+
+window.addEventListener("load", function() {
+    const loader = document.getElementById("loader");
+    
+    // Pequeno atraso para o usuário ver sua logo (opcional)
+    setTimeout(() => {
+        loader.classList.add("loader-hidden");
+    }, 3000); // 3 segundos de carregamento
+});
+
+console.log("%cCosplay Chess - Desenvolvido por Rúbertt Ramires", "color: #029191; font-size: 20px; font-weight: bold;");

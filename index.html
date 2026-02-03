@@ -4,9 +4,21 @@
     <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Cosplay Chess</title>
+    <link rel="icon" type="image/png" href="img/favicon-Photoroom.png">
     <link rel=stylesheet href="css/style.css">
 </head>
 <body>
+
+
+    <div id="loader">
+    <div class="loader-content">
+        <img src="img/favicon-Photoroom.png" alt="Rubra Studios Logo" class="loader-logo">
+        <div class="loading-bar">
+            <div class="progress"></div>
+        </div>
+        <p>CARREGANDO RUBRA STUDIOS...</p>
+    </div>
+</div>
 
 <div id="menu-toggle" onclick="toggleMenu()">🏠</div>
 
@@ -39,6 +51,9 @@
         <button class="btn" onclick="resetGame()" style="background:var(--danger); color:#fff; width: 100%">⚠️ RESET TOTAL</button>
     </div>
     <div style="padding: 15px; background: #000;"><button class="btn btn-yes" style="width: 100%" onclick="startBattle()">ATIVAR BATALHA</button></div>
+<div style="padding: 10px; text-align: center; font-size: 10px; opacity: 0.5;">
+        Criado por <b>RUBRA STUDIOS ♟️</b>
+    </div>
 </aside>
 
 <div class="app-container">
@@ -98,6 +113,8 @@
         <button class="btn btn-yes" onclick="location.reload()" style="width:200px">REINICIAR</button>
     </div>
 </div>
+
+
 <script src="js/script.js"></script>
 </body>
 </html>
