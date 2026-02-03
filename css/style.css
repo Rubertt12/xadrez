@@ -5,6 +5,14 @@
             height: 100%; width: 100%; background: var(--bg); 
             font-family: 'Segoe UI', system-ui, sans-serif; color: white; 
             touch-action: pan-x pan-y;
+            background-image: url('/img/_image.webp');
+    background-size: 300px; /* Define o tamanho de cada imagem repetida */
+    background-repeat: repeat; 
+    background-position: center;
+    background-attachment: fixed;
+            
+            
+            
         }
 
         .app-container { display: flex; flex-direction: column; width: 100vw; height: 100vh; }
@@ -92,3 +100,38 @@
 /* Posicionamento vertical (Números) */
 .coord-v { height: calc(min(88vw, 70vh) / 8); width: 25px; left: 5px; }
 .coord-v-right { right: 5px; left: auto; }
+
+
+
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background-color: #000; /* Cor de fundo caso a imagem falhe */
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Criamos uma camada de fundo separada para aplicar o blur */
+body::before {
+    content: "";
+    position: fixed; /* Mantém o fundo fixo ao rolar */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    /* Suas configurações de imagem */
+    background-image: url('../img/montain.jpg'); /* Note o ../ para sair da pasta css e achar a img */
+    background-repeat: repeat;
+    background-position: center center;
+    background-size: cover;
+    
+    /* O efeito de desfoque */
+    filter: blur(8px); 
+    
+    /* Melhora o acabamento */
+    transform: scale(1.05); /* Aumenta um pouco para sumir com as bordas brancas do blur */
+    opacity: 0.6;           /* Opcional: deixa a imagem mais escura/suave */
+    z-index: -1;            /* Garante que fique atrás de tudo */
+}
