@@ -62,3 +62,33 @@
         .btn { width: 100%; padding: 10px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 10px; }
         .btn-yes { background: var(--accent); color: #000; }
         .unit-card { background: #1a1a24; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #333; font-size: 11px; }
+
+
+        /* Container para as coordenadas */
+.board-wrapper {
+    position: relative;
+    padding: 30px; /* Aumentado para dar espaço aos números/letras */
+    background: #111;
+    border-radius: 12px;
+    border: 1px solid #222;
+}
+
+/* Estilo geral das labels */
+.coord {
+    position: absolute;
+    font-size: 12px;
+    font-weight: bold;
+    color: #666;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-transform: uppercase;
+}
+
+/* Posicionamento horizontal (Letras) */
+.coord-h { width: calc(min(88vw, 70vh) / 8); height: 25px; bottom: 5px; }
+.coord-h-top { top: 5px; }
+
+/* Posicionamento vertical (Números) */
+.coord-v { height: calc(min(88vw, 70vh) / 8); width: 25px; left: 5px; }
+.coord-v-right { right: 5px; left: auto; }

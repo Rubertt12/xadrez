@@ -209,3 +209,62 @@
     }
     function save() { db.transaction("assets","readwrite").objectStore("assets").put(store,"all"); }
     function resetGame() { if(confirm("⚠️ Reset total?")) { store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''}, board: getInitialBoard() }; save(); location.reload(); } }
+
+
+
+
+
+    function renderBoard() {
+    const b = document.getElementById('board'); 
+    const wrapper = document.querySelector('.board-wrapper');
+    b.innerHTML = '';
+    
+    // Limpa coordenadas antigas para não duplicar
+    wrapper.querySelectorAll('.coord').forEach(c => c.remove());
+
+    const letras = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    const edit = document.getElementById('edit-mode').checked;
+
+    store.board.forEach((id, i) => {
+        const row = Math.floor(i / 8);
+        const col = i % 8;
+
+        // Adicionar Números (apenas na primeira coluna de cada linha)
+        if (col === 0) {
+            const numLabel = document.createElement('div');
+            numLabel.className = 'coord coord-v';
+            numLabel.style.top = `calc(30px + ${row} * (min(88vw, 70vh) / 8))`;
+            numLabel.innerText = 8 - row; // Xadrez começa de baixo (8 a 1)
+            wrapper.appendChild(numLabel);
+        }
+
+        // Adicionar Letras (apenas na primeira linha)
+        if (row === 0) {
+            const letLabel = document.createElement('div');
+            letLabel.className = 'coord coord-h';
+            letLabel.style.left = `calc(30px + ${col} * (min(88vw, 70vh) / 8))`;
+            letLabel.innerText = letras[col];
+            wrapper.appendChild(letLabel);
+        }
+
+        // --- Lógica original da peça ---
+        const sq = document.createElement('div'); 
+        sq.className = `sq ${(row + col) % 2 == 0 ? 'l' : 'd'}`;
+        sq.onclick = () => handleSq(i);
+        
+        if(id) {
+            const c = document.createElement('div'); c.className='piece-container';
+            const p = document.createElement('div'); p.className='piece';
+            if(store.p[id]?.img) p.style.backgroundImage = `url(${store.p[id].img})`;
+            else p.style.backgroundColor = id.endsWith('_B') ? '#fff' : '#f05';
+            c.appendChild(p);
+            if(edit) {
+                const x = document.createElement('div'); x.innerHTML='×'; x.style="position:absolute;top:-5px;right:-5px;background:red;border-radius:50%;width:15px;height:15px;display:flex;justify-content:center;align-items:center;cursor:pointer;font-size:10px;border:1px solid white";
+                x.onclick=(e)=>{e.stopPropagation(); store.board[i]=null; renderBoard(); save();};
+                c.appendChild(x);
+            }
+            sq.appendChild(c);
+        }
+        b.appendChild(sq);
+    });
+}
