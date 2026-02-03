@@ -65,19 +65,21 @@
             <div class="fighter" style="flex:1; text-align:center">
                 <div id="a-img" class="arena-box" style="border-color: var(--accent)"></div>
                 <div style="display:flex; gap:5px; margin-top:8px">
-                    <button class="btn" onclick="audioAction('atk','play')" style="background:#004444; flex:1">▶</button>
-                    <button class="btn" onclick="audioAction('atk','pause')" style="background:#440000; flex:1">||</button>
+                    <button id="btn-play-L" class="btn" style="background:#004444; flex:1">▶</button>
+                    <button id="btn-pause-L" class="btn" style="background:#440000; flex:1">||</button>
                 </div>
-                <button class="btn btn-yes" onclick="finishDuel('atk')" style="margin-top:10px">VENCEU</button>
+                <button class="btn btn-yes" onclick="finishDuel('B')" style="margin-top:10px">BRANCAS VENCERAM</button>
             </div>
+
             <div style="font-size: 24px;">⚔️</div>
+
             <div class="fighter" style="flex:1; text-align:center">
                 <div id="d-img" class="arena-box" style="border-color: var(--danger)"></div>
                 <div style="display:flex; gap:5px; margin-top:8px">
-                    <button class="btn" onclick="audioAction('def','play')" style="background:#004444; flex:1">▶</button>
-                    <button class="btn" onclick="audioAction('def','pause')" style="background:#440000; flex:1">||</button>
+                    <button id="btn-play-R" class="btn" style="background:#004444; flex:1">▶</button>
+                    <button id="btn-pause-R" class="btn" style="background:#440000; flex:1">||</button>
                 </div>
-                <button class="btn" onclick="finishDuel('def')" style="background:var(--danger); color:#fff; margin-top:10px">VENCEU</button>
+                <button class="btn" onclick="finishDuel('P')" style="background:var(--danger); color:#fff; margin-top:10px">PRETAS VENCERAM</button>
             </div>
         </div>
         <button class="btn" onclick="closeArena()" style="background:#222; margin-top:10px">CANCELAR DUELO</button>
