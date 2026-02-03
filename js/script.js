@@ -1,0 +1,211 @@
+   const peoes = ['P1','P2','P3','P4','P5','P6','P7','P8'];
+    const nobres = ['T1','C1','B1','Q1','K1','B2','C2','T2'];
+    const getInitialBoard = () => [
+        ...nobres.map(id => id + '_P'), ...peoes.map(id => id + '_P'),
+        ...Array(32).fill(null),
+        ...peoes.map(id => id + '_B'), ...nobres.map(id => id + '_B')
+    ];
+
+    let db, store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''}, board: getInitialBoard() };
+    let ambientAudios = { Ambiente: new Audio(), Entrada: new Audio(), Intro1: new Audio(), Intro2: new Audio() };
+    let audioAtk = new Audio(), audioDef = new Audio();
+    let isLive = false, turn = 'B', sel = null, pending = null;
+    let fadeInterval = null;
+
+    const req = indexedDB.open("WarEngine_v33_2", 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore("assets");
+    req.onsuccess = e => { db = e.target.result; loadData(); };
+
+    function loadData() {
+        db.transaction("assets").objectStore("assets").get("all").onsuccess = e => {
+            if(e.target.result) store = e.target.result;
+            if(!store.board) store.board = getInitialBoard();
+            renderBoard(); updateUI(); renderConfigLists(); setupAmbientUI();
+        };
+    }
+
+    function setupAmbientUI() {
+        const cont = document.getElementById('ambient-controls'); cont.innerHTML = '';
+        ['Ambiente', 'Entrada', 'Intro1', 'Intro2'].forEach(type => {
+            if(store.g['snd'+type]) ambientAudios[type].src = store.g['snd'+type];
+            ambientAudios[type].loop = (type === 'Ambiente');
+            const div = document.createElement('div');
+            div.style = "background: #000; padding: 8px; border-radius: 5px; border: 1px solid #333;";
+            div.innerHTML = `<div style="font-size:10px; margin-bottom:5px; color:#aaa">${type.toUpperCase()}</div>
+                <input type="file" style="font-size:10px; width:100%" onchange="upAmb('${type}', this)">
+                <div style="display:flex; gap:5px; margin-top:5px">
+                    <button class="btn" onclick="ambientAudios['${type}'].play()" style="flex:1; background:#004444">▶</button>
+                    <button class="btn" onclick="ambientAudios['${type}'].pause()" style="flex:1; background:#440000">||</button>
+                </div>`;
+            cont.appendChild(div);
+        });
+    }
+
+    function fadeAmbient(targetVol, duration = 1000) {
+        clearInterval(fadeInterval);
+        const masterVol = parseFloat(document.getElementById('v-master').value);
+        const finalTarget = targetVol * masterVol;
+        const step = 0.05;
+        const intervalTime = duration / (1 / step);
+        fadeInterval = setInterval(() => {
+            let allDone = true;
+            Object.values(ambientAudios).forEach(audio => {
+                if (!audio.paused) {
+                    if (Math.abs(audio.volume - finalTarget) > step) {
+                        audio.volume += (audio.volume < finalTarget) ? step : -step;
+                        allDone = false;
+                    } else { audio.volume = finalTarget; }
+                }
+            });
+            if (allDone) clearInterval(fadeInterval);
+        }, intervalTime);
+    }
+
+    function upAmb(t, i) {
+        const r = new FileReader(); r.onload = e => { store.g['snd'+t] = e.target.result; ambientAudios[t].src = e.target.result; save(); };
+        r.readAsDataURL(i.files[0]);
+    }
+
+    function updateMasterVolume() {
+        const v = document.getElementById('v-master').value;
+        Object.values(ambientAudios).forEach(a => a.volume = v);
+        audioAtk.volume = v; audioDef.volume = v;
+    }
+
+    function renderBoard() {
+        const b = document.getElementById('board'); b.innerHTML = '';
+        const edit = document.getElementById('edit-mode').checked;
+        store.board.forEach((id, i) => {
+            const sq = document.createElement('div'); sq.className = `sq ${(Math.floor(i/8)+i%8)%2==0?'l':'d'}`;
+            sq.onclick = () => handleSq(i);
+            if(id) {
+                const c = document.createElement('div'); c.className='piece-container';
+                const p = document.createElement('div'); p.className='piece';
+                if(store.p[id]?.img) p.style.backgroundImage = `url(${store.p[id].img})`;
+                else p.style.backgroundColor = id.endsWith('_B') ? '#fff' : '#f05';
+                c.appendChild(p);
+                if(edit) {
+                    const x = document.createElement('div'); x.innerHTML='×'; x.style="position:absolute;top:-5px;right:-5px;background:red;border-radius:50%;width:15px;height:15px;display:flex;justify-content:center;align-items:center;cursor:pointer;font-size:10px;border:1px solid white";
+                    x.onclick=(e)=>{e.stopPropagation(); store.board[i]=null; renderBoard(); save();};
+                    c.appendChild(x);
+                }
+                sq.appendChild(c);
+            }
+            b.appendChild(sq);
+        });
+    }
+
+    function handleSq(i) {
+        if(!isLive) return;
+        const free = document.getElementById('free-move').checked;
+        
+        if(sel === null) {
+            if(store.board[i] && (free || store.board[i].endsWith('_'+turn))) {
+                sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444";
+            }
+        } else {
+            // Se clicar na própria peça (ou qualquer peça no modo livre), troca a seleção
+            // EXCETO se for clicar numa peça inimiga para atacar
+            const clickingOwnColor = store.board[i] && store.board[i].endsWith(store.board[sel].slice(-2));
+            
+            if(store.board[i] && (free ? clickingOwnColor : store.board[i].endsWith('_'+turn))) {
+                sel = i; renderBoard(); document.getElementById('board').children[i].style.background = "#004444";
+            }
+            // ATAQUE (Sempre funciona se clicar em cima de outra peça de cor diferente ou no modo livre)
+            else if(store.board[i]) { pending = {f:sel, t:i}; openArena(); }
+            // MOVIMENTO
+            else { 
+                store.board[i]=store.board[sel]; store.board[sel]=null; 
+                if(!free) nextTurn(); else { sel=null; renderBoard(); save(); } 
+            }
+        }
+    }
+
+    function openArena() {
+        const idA = store.board[pending.f], idD = store.board[pending.t];
+        fadeAmbient(0.1);
+        document.getElementById('a-img').style.backgroundImage = `url(${store.p[idA]?.img || ''})`;
+        document.getElementById('d-img').style.backgroundImage = `url(${store.p[idD]?.img || ''})`;
+        audioAtk.src = store.p[idA]?.snd || ""; audioDef.src = store.p[idD]?.snd || "";
+        const master = document.getElementById('v-master').value;
+        audioAtk.volume = (store.p[idA]?.vol ?? 0.7) * master;
+        audioDef.volume = (store.p[idD]?.vol ?? 0.7) * master;
+        document.getElementById('arena').style.display='flex';
+    }
+
+    function audioAction(role, act) { (role === 'atk' ? audioAtk : audioDef)[act](); }
+
+    function finishDuel(w) {
+        audioAtk.pause(); audioDef.pause();
+        const free = document.getElementById('free-move').checked;
+        if(w==='atk') {
+            if(store.board[pending.f].endsWith('_B')) store.g.killsB++; else store.g.killsP++;
+            store.board[pending.t]=store.board[pending.f]; store.board[pending.f]=null;
+        } else {
+            if(store.board[pending.t].endsWith('_B')) store.g.killsB++; else store.g.killsP++;
+            store.board[pending.f]=null;
+        }
+        document.getElementById('arena').style.display='none';
+        fadeAmbient(1); checkGameOver(); 
+        if(!free) nextTurn(); else { sel=null; renderBoard(); save(); }
+    }
+
+    function clearBoardPieces() {
+        if(confirm("Deseja remover todas as peças do tabuleiro para arrumar do zero?")) {
+            store.board = Array(64).fill(null);
+            renderBoard(); save();
+        }
+    }
+
+    function checkGameOver() {
+        const wb = store.board.filter(p => p?.endsWith('_B')).length;
+        const pb = store.board.filter(p => p?.endsWith('_P')).length;
+        if (wb === 0 || pb === 0) {
+            isLive = false;
+            const s = wb === 0 ? 'P' : 'B';
+            document.getElementById('victory-photo').style.backgroundImage = `url(${store.g['avatar'+s]})`;
+            document.getElementById('winner-name').innerText = `EXÉRCITO DAS ${wb===0?'PRETAS':'BRANCAS'}`;
+            document.getElementById('victory-modal').style.display = 'flex';
+        }
+    }
+
+    function renderConfigLists() {
+        ['white','black'].forEach(s => {
+            const team = s==='white'?'B':'P', cont = document.getElementById('list-'+s);
+            cont.innerHTML = `<h3>${s.toUpperCase()}</h3>`;
+            [...nobres, ...peoes].forEach(p => {
+                const id = `${p}_${team}`; if(!store.p[id]) store.p[id] = {vol: 0.7};
+                const d = document.createElement('div'); d.className = 'unit-card';
+                d.innerHTML = `<b>${id}</b><br>IMG: <input type="file" onchange="upPiece('${id}','img',this)">
+                SOM: <input type="file" onchange="upPiece('${id}','snd',this)">
+                VOL: <input type="range" min="0" max="1" step="0.1" value="${store.p[id].vol}" oninput="store.p['${id}'].vol=parseFloat(this.value);save()">`;
+                cont.appendChild(d);
+            });
+        });
+    }
+
+    function upPiece(id, t, i) {
+        const r = new FileReader(); r.onload = e => { store.p[id][t] = e.target.result; save(); renderBoard(); };
+        r.readAsDataURL(i.files[0]);
+    }
+    function upAvatar(s, i) {
+        const r = new FileReader(); r.onload = e => { store.g['avatar'+s] = e.target.result; save(); updateUI(); };
+        r.readAsDataURL(i.files[0]);
+    }
+    function showTab(t) {
+        ['white','black','sys'].forEach(id => document.getElementById('list-'+id).style.display = (id===t?'block':'none'));
+        ['t-white','t-black','t-sys'].forEach(id => document.getElementById(id).className = (id==='t-'+t?'active':''));
+    }
+    function nextTurn() { turn = turn==='B'?'P':'B'; sel=null; renderBoard(); updateUI(); save(); }
+    function closeArena() { document.getElementById('arena').style.display='none'; audioAtk.pause(); audioDef.pause(); fadeAmbient(1); }
+    function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+    function startBattle() { isLive=true; toggleMenu(); updateUI(); }
+    function rollInitiative() { turn = Math.random() < 0.5 ? 'B' : 'P'; updateUI(); alert("Começa: " + (turn==='B'?'BRANCO':'PRETO')); }
+    function updateUI() {
+        document.getElementById('score-B').innerText = store.g.killsB; document.getElementById('score-P').innerText = store.g.killsP;
+        document.getElementById('img-B').style.backgroundImage = `url(${store.g.avatarB})`; document.getElementById('img-P').style.backgroundImage = `url(${store.g.avatarP})`;
+        document.getElementById('card-B').className = 'player-card' + (turn==='B'&&isLive?' active-B':'');
+        document.getElementById('card-P').className = 'player-card' + (turn==='P'&&isLive?' active-P':'');
+    }
+    function save() { db.transaction("assets","readwrite").objectStore("assets").put(store,"all"); }
+    function resetGame() { if(confirm("⚠️ Reset total?")) { store = { p: {}, g: {killsB:0, killsP:0, avatarB:'', avatarP:''}, board: getInitialBoard() }; save(); location.reload(); } }
